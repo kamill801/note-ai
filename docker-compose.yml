@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: note-ai-postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: note_ai
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d note_ai"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - note_ai_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  note_ai_postgres_data:

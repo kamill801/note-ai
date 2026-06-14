@@ -136,78 +136,78 @@ Acceptance:
 
 ### Project Bootstrap
 
-- TODO: 모바일 앱 scaffold.
+- DONE: 모바일 앱 scaffold.
   - Files likely affected: `mobile/`
   - Acceptance: app starts locally.
   - Test: local run.
 
-- TODO: backend scaffold.
+- DONE: backend scaffold.
   - Files likely affected: `backend/`
   - Acceptance: health check returns OK.
   - Test: API request.
 
-- TODO: database schema setup.
+- DONE: database schema setup.
   - Files likely affected: `backend/db/`
   - Acceptance: migration creates required tables.
   - Test: migration dry run.
 
 ### Source and Player
 
-- TODO: YouTube URL parser.
+- DONE: YouTube URL parser.
   - Files likely affected: `backend/src/services/source-service.ts`
   - Acceptance: normal YouTube URL, short URL, playlist URL handling defined.
   - Test: unit tests.
 
-- TODO: source registration API.
+- DONE: source registration API.
   - Files likely affected: `backend/src/routes/sources.ts`
   - Acceptance: creates source record.
   - Test: API test.
 
-- TODO: in-app player screen.
+- DONE: in-app player screen.
   - Files likely affected: `mobile/src/screens/PlayerScreen.tsx`
   - Acceptance: renders official embedded player visibly.
   - Test: device/simulator smoke.
 
-- TODO: player bridge current time.
+- DONE: player bridge current time.
   - Files likely affected: `mobile/src/components/YouTubePlayerView.tsx`
   - Acceptance: can read current playback time.
   - Test: manual capture timestamp check.
 
 ### Capture and Voice
 
-- TODO: capture mode UI.
+- DONE: capture mode UI.
   - Files likely affected: `mobile/src/components/CaptureModeToggle.tsx`
   - Acceptance: active/inactive states visible.
   - Test: UI smoke.
 
-- TODO: microphone permission and recorder.
+- DONE: microphone permission and recorder.
   - Files likely affected: `mobile/src/services/audio.ts`
   - Acceptance: records memo after permission.
   - Test: device test.
 
-- TODO: speech-to-text integration.
+- DONE: speech-to-text integration (manual transcript fallback; external STT credential integration pending).
   - Files likely affected: `backend/src/ai/speech-to-text.ts`
   - Acceptance: memo transcript saved.
   - Test: fixture audio.
 
 ### Transcript and AI
 
-- TODO: transcript import provider for test videos.
+- DONE: transcript import provider for test videos.
   - Files likely affected: `backend/src/services/transcript-service.ts`
   - Acceptance: transcript segments stored.
   - Test: fixture transcript.
 
-- TODO: timestamp segment selector.
+- DONE: timestamp segment selector.
   - Files likely affected: `backend/src/services/segment-selection-service.ts`
   - Acceptance: returns expected rows around timestamp.
   - Test: unit test.
 
-- TODO: note generation prompt/schema.
+- DONE: note generation prompt/schema.
   - Files likely affected: `backend/src/ai/note-generator.ts`
   - Acceptance: valid structured JSON note.
   - Test: schema validation.
 
-- TODO: research service.
+- DONE: research service.
   - Files likely affected: `backend/src/services/research-service.ts`
   - Acceptance: source-backed results attached to note.
   - Test: mocked search.
@@ -302,3 +302,62 @@ Do not build:
 - Errors must be recoverable.
 - Mobile screens must support one-handed use.
 - Tests should cover parsing, segment selection, schema validation, and API behavior.
+
+
+## Progress Log
+
+### 2026-06-15 — Session `omx-1781457410925-r39u0p`
+
+- [x] Milestone 0 bootstrap files created: root npm workspace, `backend/`, `mobile/`, shared scripts, `.env.example` updates.
+- [x] Backend health check implemented at `GET /health`.
+- [x] PostgreSQL/pgvector-oriented initial schema added at `backend/db/migrations/0001_initial.sql`.
+- [x] Expo Dev Client mobile scaffold added with Neo Brutalism token contract (`mobile/src/design/tokens.ts`).
+- [x] Milestone 1 started: YouTube URL parser, source registration service/API, and import/source list mobile screen added.
+- [x] Verification: `npm run check` passed — workspace bootstrap, 10 backend tests, migration validation, mobile design contract.
+- [x] Verification: `npm run typecheck` passed — backend and mobile TypeScript.
+- [x] Verification: `npm run smoke:backend` passed — `health smoke passed: ok`.
+- [x] Verification: `npm --workspace mobile exec -- expo config --type public` passed — Expo SDK 56 config resolved with microphone permission copy.
+- [x] Verification: Expo Metro startup smoke reached QR/dev-client screen and was stopped cleanly.
+- [ ] DB live connection: `npm run db:check` failed because no local PostgreSQL server/tooling is running in this environment. Schema validation passed; live DB remains environment setup work.
+- [ ] Security audit: `npm audit --omit=dev` reports Expo SDK 56 transitive `xcode -> uuid@7.0.3` moderate advisory; non-breaking `npm audit fix` cannot resolve and `--force` would downgrade Expo to 46, so no force fix applied.
+
+Session stop reason: user requested temporary stop (`잠깐 중단`).
+
+### 2026-06-15 — Continued Session `omx-1781457410925-r39u0p`
+
+- [x] Milestone 2 implemented: visible `react-native-webview` YouTube IFrame player, `getCurrentTime()` bridge, visible player state, manual `이 부분 저장` timestamp capture.
+- [x] Milestone 2 backend implemented: `POST /captures`, `GET /captures`, exact timestamp capture tests.
+- [x] Milestone 3 implemented: foreground capture mode UI, explicit mic permission state, `expo-audio` recorder, background recording/playback disabled, user memo manual transcript fallback.
+- [x] Milestone 3 backend implemented: `POST /voice-memos`, memo preservation, intent classification, keyword extraction.
+- [x] Milestone 4 implemented: manual/test transcript import provider, timestamp window selector (`-45s/+75s`), memo-only fallback when transcript unavailable.
+- [x] Milestone 5 implemented: deterministic Korean structured note generator/schema, user memo preservation, evidence segment IDs, memo-only low-confidence fallback.
+- [x] Milestone 6 implemented: mocked research job with source URLs, Korean synthesis, next steps.
+- [x] Milestone 7 API QA implemented: `npm run qa` runs check/typecheck/backend smoke/MVP1 API smoke/policy check.
+- [x] Verification: `npm run qa` passed — 23 backend tests, migration validation, mobile design contract, typecheck, backend smoke, full MVP1 API smoke, policy check.
+- [x] Verification: Expo config/startup smoke passed after adding `expo-audio`; dev-client Metro reached QR screen and stopped cleanly.
+- [ ] Live DB connection still requires Docker/PostgreSQL on the developer machine; `docker-compose.yml` was added, but Docker is unavailable in this runtime.
+- [ ] Real speech-to-text and real web search require API credentials/providers; current MVP uses explicit manual transcript fallback and mocked search result without storing secrets.
+- [ ] Device/simulator timestamp accuracy (+/- 2s) and microphone recording must be manually verified in an Expo Dev Client build.
+- [ ] `npm audit --omit=dev` still reports Expo SDK 56 transitive `xcode -> uuid@7.0.3` moderate advisory; non-breaking fix unavailable, force fix would downgrade Expo.
+
+### 2026-06-15 — Continued Session `omx-1781464753324-prel3t`
+
+- [x] Preserved existing uncommitted work and started by checking `git status --short`.
+- [x] Re-read the required source-of-truth docs and confirmed the MVP1 design gate remains complete.
+- [x] Mobile-backend vertical slice connected:
+  - `ImportSourceScreen` now registers sources through `POST /sources`.
+  - MVP1 demo path imports a manual Korean transcript through `POST /transcripts`.
+  - `PlayerScreen` now creates backend exact captures through `POST /captures`.
+  - `CaptureModeScreen` now stores the memo through `POST /voice-memos` and generates the Korean note through `POST /notes`.
+  - New `NoteDetailScreen` shows timestamp, confidence, summary, preserved user memo, application ideas, transcript evidence, keywords, recommended materials, and follow-up research results.
+  - `NoteDetailScreen` can create a mocked source-backed research job through `POST /research-jobs`.
+- [x] Backend transcript import now updates source `transcriptStatus` to `ready` for API/UI consistency.
+- [x] Verification: `npm run check` passed — 23 backend tests, migration validation, mobile design contract.
+- [x] Verification: `npm run typecheck` passed — backend and mobile TypeScript.
+- [x] Verification: `npm run smoke:backend` passed.
+- [x] Verification: `npm run smoke:mvp1` passed.
+- [x] Verification: `npm run policy:check` passed — no hidden/background YouTube playback, audio-only extraction, or YouTube download markers found.
+- [x] Verification: `npm --workspace mobile exec -- expo config --type public` passed.
+- [x] Verification: Expo Metro startup smoke reached `Waiting on http://localhost:8081`; process was stopped afterward.
+- [ ] Live DB connection remains unverified in this runtime: `npm run db:check` returned `ECONNREFUSED`; `docker compose up -d postgres` could not run because `docker` is not installed.
+- [ ] Physical device/simulator smoke for YouTube player timestamp accuracy and microphone recording remains manual.

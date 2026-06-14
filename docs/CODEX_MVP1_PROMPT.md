@@ -58,3 +58,11 @@ Development expectations:
 - Update docs only when a technical decision materially changes.
 - Prefer a small working vertical slice over broad unfinished scaffolding.
 - Verify each milestone with concrete commands or smoke checks.
+
+Autonomy and approval policy:
+
+- Continue through safe local development without asking the user for permission.
+- Do not ask before running local npm scripts, local tests, typechecks, build checks, dev servers, localhost smoke tests, DB connectivity checks, or non-destructive file edits inside this workspace.
+- Prefer separate commands over chained verification commands when sandbox or local network checks may be involved. For example, run `npm run typecheck`, `npm run check`, and `npm run db:check` separately instead of one `&&`/`|| true` chain.
+- Ask the user first only for real secrets/API keys, paid API/provider activation, payment/billing SDKs, production deploys, destructive data/file operations, git history rewrites, or scope changes beyond MVP1.
+- Do not add actual credentials. Placeholder env names are allowed, but real values must come from the user.

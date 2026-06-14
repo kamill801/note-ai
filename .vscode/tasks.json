@@ -2,9 +2,9 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "OMX: Direct Workspace",
+      "label": "OMX: Direct Workspace (Autonomous Local Dev)",
       "type": "shell",
-      "command": "omx --direct",
+      "command": "omx --direct --yolo",
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -16,9 +16,9 @@
       }
     },
     {
-      "label": "OMX: Tmux Workspace",
+      "label": "OMX: Tmux Workspace (Autonomous Local Dev)",
       "type": "shell",
-      "command": "omx --tmux",
+      "command": "omx --tmux --yolo",
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -86,7 +86,7 @@
     {
       "label": "Codex: Interactive Workspace",
       "type": "shell",
-      "command": "codex -C ${workspaceFolder} --sandbox workspace-write --ask-for-approval on-request",
+      "command": "codex -C ${workspaceFolder} --sandbox workspace-write --ask-for-approval never",
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",
@@ -95,9 +95,20 @@
       }
     },
     {
-      "label": "Codex: Start MVP1 Implementation",
+      "label": "Codex: Full Local Dev (No Approval Prompts)",
       "type": "shell",
-      "command": "codex -C ${workspaceFolder} --sandbox workspace-write --ask-for-approval on-request \"$(cat docs/CODEX_MVP1_PROMPT.md)\"",
+      "command": "codex -C ${workspaceFolder} --sandbox danger-full-access --ask-for-approval on-request",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "focus": true
+      }
+    },
+    {
+      "label": "Codex: Start MVP1 Implementation (Full Local Dev)",
+      "type": "shell",
+      "command": "codex -C ${workspaceFolder} --sandbox danger-full-access --ask-for-approval on-request \"$(cat docs/CODEX_MVP1_PROMPT.md)\"",
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",

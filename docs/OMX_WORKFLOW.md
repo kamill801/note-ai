@@ -22,14 +22,14 @@ Start an interactive OMX/Codex session in this repo:
 
 ```bash
 cd /Users/dd/Documents/note-ai
-omx --direct
+omx --direct --yolo
 ```
 
 Start an OMX tmux-backed session when you want the normal OMX terminal runtime:
 
 ```bash
 cd /Users/dd/Documents/note-ai
-omx --tmux
+omx --tmux --yolo
 ```
 
 Start MVP1 implementation directly from the prepared handoff prompt:
@@ -73,6 +73,25 @@ omx doctor: 15 passed, 1 warning, 0 failed
 ```
 
 The remaining warning is for the deprecated `omx explore` harness. This project guidance does not use `omx explore`.
+
+## Local Approval Policy
+
+For MVP1 implementation, use `--yolo` OMX sessions so local development can continue without repeated permission prompts for normal reversible work.
+
+Safe to auto-run:
+
+- local npm install/test/typecheck/build/check scripts
+- localhost dev servers and smoke tests
+- local DB connectivity checks
+- non-destructive edits inside this workspace
+
+Still requires user approval:
+
+- real API keys, secrets, credentials, or paid provider activation
+- billing/payment SDKs, production analytics/monitoring activation, or production deploys
+- destructive file/data operations, git history rewrites, or material scope changes
+
+Avoid chaining verification commands with `&&` or `|| true` when a localhost or DB check is involved. Run them separately so failures are easier to inspect and permission handling stays narrow.
 
 ## Workflow Rules
 

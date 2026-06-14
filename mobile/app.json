@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "Note AI",
+    "slug": "note-ai",
+    "scheme": "noteai",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "app.noteai.mobile",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Note AI는 사용자가 말한 저장 이유와 생각을 노트에 보존하기 위해 마이크 권한을 요청합니다."
+      }
+    },
+    "android": {
+      "package": "app.noteai.mobile",
+      "permissions": [
+        "RECORD_AUDIO"
+      ]
+    },
+    "extra": {
+      "apiBaseUrl": "http://localhost:3000"
+    },
+    "plugins": [
+      "expo-status-bar",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Note AI는 사용자가 말한 저장 이유와 생각을 노트에 보존하기 위해 마이크 권한을 요청합니다.",
+          "enableBackgroundPlayback": false,
+          "enableBackgroundRecording": false,
+          "recordAudioAndroid": true
+        }
+      ]
+    ]
+  }
+}

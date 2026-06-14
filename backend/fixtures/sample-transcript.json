@@ -1,0 +1,13 @@
+{
+  "videoId": "dQw4w9WgXcQ",
+  "provider": "manual",
+  "lang": "ko",
+  "segments": [
+    { "startSec": 0, "endSec": 20, "text": "오늘은 사용자가 이동 중에 지식을 저장하는 상황을 살펴봅니다." },
+    { "startSec": 21, "endSec": 45, "text": "중요한 순간을 놓치지 않으려면 링크와 시간 정보를 함께 남겨야 합니다." },
+    { "startSec": 46, "endSec": 80, "text": "사용자의 음성 메모는 왜 이 부분이 중요한지 알려주는 핵심 단서입니다." },
+    { "startSec": 81, "endSec": 120, "text": "timestamp 주변 자막을 근거로 선택하면 노트가 출처와 연결됩니다." },
+    { "startSec": 121, "endSec": 170, "text": "추가 리서치는 사용자가 원할 때 출처 URL과 함께 붙이는 것이 좋습니다." },
+    { "startSec": 171, "endSec": 220, "text": "정확하지 않은 모드에서는 추정 구간과 신뢰도를 반드시 표시해야 합니다." }
+  ]
+}

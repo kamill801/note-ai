@@ -1,0 +1,27 @@
+{
+  "name": "note-ai-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Mobile-first YouTube knowledge capture app workspace.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0",
+    "npm": ">=10.0.0"
+  },
+  "workspaces": [
+    "backend",
+    "mobile"
+  ],
+  "scripts": {
+    "check": "node scripts/check-workspace.mjs && npm --workspace backend test && npm --workspace backend run db:validate && npm --workspace mobile run check",
+    "test": "npm --workspace backend test",
+    "dev:backend": "npm --workspace backend run dev",
+    "dev:mobile": "npm --workspace mobile run dev",
+    "smoke:backend": "npm --workspace backend run smoke",
+    "db:check": "npm --workspace backend run db:check",
+    "typecheck": "npm --workspace backend run typecheck && npm --workspace mobile run typecheck",
+    "smoke:mvp1": "npm --workspace backend run smoke:mvp1",
+    "policy:check": "node scripts/policy-check.mjs",
+    "qa": "npm run check && npm run typecheck && npm run smoke:backend && npm run smoke:mvp1 && npm run policy:check"
+  }
+}
