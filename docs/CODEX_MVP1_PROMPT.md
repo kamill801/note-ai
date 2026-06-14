@@ -16,6 +16,14 @@ Goal:
 
 Build MVP1: 앱 내 재생 기반 정확 저장.
 
+Before implementation:
+
+1. Run the repo-local design gate first.
+2. Treat `DESIGN.md` as the canonical design contract.
+3. If `DESIGN.md` is missing implementation-critical UX decisions, refresh it before coding.
+4. Ask the user only when the design choice changes product direction, brand promise, or platform scope.
+5. Otherwise make conservative design assumptions, record them in `DESIGN.md`, and proceed.
+
 MVP1 flow:
 
 1. User registers a YouTube URL.
@@ -31,7 +39,7 @@ MVP1 flow:
 11. App recommends follow-up search keywords/materials.
 12. App can run optional follow-up research and attach results to the note.
 
-Start with `docs/PLAN.md` Milestone 0 and Milestone 1. Do not jump ahead unless the earlier milestones are verified.
+Start with the `docs/PLAN.md` Pre-Implementation Design Gate, then Milestone 0 and Milestone 1. Do not jump ahead unless the earlier milestones are verified.
 
 Hard non-goals:
 
@@ -50,4 +58,3 @@ Development expectations:
 - Update docs only when a technical decision materially changes.
 - Prefer a small working vertical slice over broad unfinished scaffolding.
 - Verify each milestone with concrete commands or smoke checks.
-

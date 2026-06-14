@@ -1,7 +1,7 @@
 # PLAN: 이동 중 YouTube 지식 캡처 앱
 
 Status: Draft
-Last updated: 2026-06-14
+Last updated: 2026-06-15
 
 ## Current Goal
 
@@ -10,11 +10,38 @@ Last updated: 2026-06-14
 ## Development Principles
 
 - 먼저 정확 저장 모드로 전체 파이프라인을 검증한다.
+- 구현 전에 `DESIGN.md`를 MVP1 design decision baseline으로 확인한다.
 - YouTube 앱 연동형 추정 저장은 2차 MVP로 둔다.
 - YouTube를 대체하지 않는다.
 - 시스템 전체 always-listening은 하지 않는다.
 - 음성 트리거는 앱 foreground/capture mode 안에서만 동작한다.
 - TECHSPEC에는 구현 순서를 넣지 않고, 이 파일에서만 관리한다.
+
+## Pre-Implementation Gate: Design Decision Lock
+
+목표: OMX가 바로 구현으로 뛰지 않고, MVP1 모바일 UX/visual baseline을 먼저 확정한다.
+
+Current status:
+
+- Complete for MVP1 as of 2026-06-15.
+- Active design contract: root `DESIGN.md`.
+- Active visual reference: `docs/design-review.html`.
+- MVP1 selected style: Neo Brutalism with Block Lime `#dceeb1`.
+- Product-facing save language: `이 부분 저장`, `방금 저장`, `내 생각 말하기`.
+
+Required action:
+
+- `DESIGN.md`를 읽고 현재 설계가 MVP1 구현에 충분한지 확인한다.
+- 누락된 UX/시각/상태/마이크 권한/오류 상태가 있으면 `DESIGN.md`에 먼저 보강한다.
+- 제품 방향을 바꾸는 디자인 결정이 필요하면 사용자에게 질문한다.
+- 단순 구현 세부 스타일은 `DESIGN.md`의 원칙을 기준으로 합리적으로 결정하고 기록한다.
+
+Acceptance:
+
+- `DESIGN.md`가 MVP1 구현의 디자인 기준점으로 사용 가능하다.
+- Player/Capture, Source Library, Note Detail, Research Result의 핵심 화면 방향이 설명되어 있다.
+- 색감, typography, spacing, component states, accessibility, microcopy constraints가 구현자가 참고할 정도로 정리되어 있다.
+- 남은 open question이 있더라도 Milestone 0 진행을 막는지 여부가 명시되어 있다.
 
 ## Milestones
 
@@ -275,4 +302,3 @@ Do not build:
 - Errors must be recoverable.
 - Mobile screens must support one-handed use.
 - Tests should cover parsing, segment selection, schema validation, and API behavior.
-

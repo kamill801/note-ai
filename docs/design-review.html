@@ -1,0 +1,1142 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Note AI MVP1 Neo Brutalism App Design</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --lime: #dceeb1;
+        --lime-strong: #c8e86d;
+        --paper: #f8f6ec;
+        --cream: #fffdf4;
+        --ink: #111111;
+        --muted: #5d6257;
+        --green: #3d7550;
+        --olive: #3b4632;
+        --blue: #9cc8ff;
+        --pink: #f4b5c4;
+        --amber: #f3c84e;
+        --violet: #cbc2ff;
+        --line: #111111;
+        --soft-line: #dad4c4;
+        --shadow: 7px 7px 0 var(--ink);
+        --shadow-sm: 4px 4px 0 var(--ink);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background:
+          linear-gradient(rgba(17, 17, 17, 0.035) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(17, 17, 17, 0.035) 1px, transparent 1px),
+          var(--paper);
+        background-size: 28px 28px;
+        color: var(--ink);
+        font-family:
+          Inter,
+          Pretendard,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        letter-spacing: 0;
+      }
+
+      header {
+        padding: 34px 36px 24px;
+        border-bottom: 3px solid var(--ink);
+        background: var(--cream);
+      }
+
+      main {
+        display: grid;
+        gap: 30px;
+        padding: 28px 36px 44px;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        max-width: 1060px;
+        font-size: 38px;
+        line-height: 1.08;
+        font-weight: 900;
+      }
+
+      .subtitle {
+        max-width: 980px;
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 16px;
+        line-height: 1.62;
+        font-weight: 560;
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 18px;
+      }
+
+      .chip {
+        display: inline-flex;
+        min-height: 32px;
+        align-items: center;
+        padding: 6px 11px;
+        border: 2px solid var(--ink);
+        background: #fff;
+        box-shadow: 3px 3px 0 var(--ink);
+        color: var(--ink);
+        font-size: 12px;
+        font-weight: 850;
+      }
+
+      .chip.lime {
+        background: var(--lime);
+      }
+
+      .section {
+        border: 3px solid var(--ink);
+        background: var(--cream);
+        box-shadow: var(--shadow);
+      }
+
+      .section-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 22px;
+        border-bottom: 3px solid var(--ink);
+        background: #fff;
+      }
+
+      .section-head h2 {
+        font-size: 25px;
+        line-height: 1.2;
+        font-weight: 900;
+      }
+
+      .section-head p {
+        max-width: 780px;
+        margin-top: 7px;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.58;
+      }
+
+      .badge {
+        flex: 0 0 auto;
+        padding: 8px 11px;
+        border: 2px solid var(--ink);
+        background: var(--lime);
+        box-shadow: var(--shadow-sm);
+        color: var(--ink);
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .loop-grid,
+      .refs-grid,
+      .flow-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(180px, 1fr));
+        gap: 0;
+      }
+
+      .loop-card,
+      .ref-card,
+      .flow-card {
+        min-height: 178px;
+        padding: 18px;
+        border-right: 3px solid var(--ink);
+        border-bottom: 3px solid var(--ink);
+        background: var(--cream);
+      }
+
+      .loop-card:nth-child(5n),
+      .ref-card:nth-child(5n),
+      .flow-card:nth-child(5n) {
+        border-right: 0;
+      }
+
+      .loop-card strong,
+      .ref-card strong,
+      .flow-card strong {
+        display: inline-flex;
+        padding: 5px 7px;
+        border: 2px solid var(--ink);
+        background: var(--lime);
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .loop-card h3,
+      .ref-card h3,
+      .flow-card h3 {
+        margin-top: 12px;
+        font-size: 18px;
+        line-height: 1.25;
+        font-weight: 900;
+      }
+
+      .loop-card p,
+      .ref-card p,
+      .flow-card p {
+        margin-top: 9px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.52;
+      }
+
+      .screens-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(250px, 1fr));
+        gap: 20px;
+        padding: 22px;
+      }
+
+      .screen-card {
+        border: 3px solid var(--ink);
+        background: #fff;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .screen-info {
+        min-height: 128px;
+        padding: 14px;
+        border-bottom: 3px solid var(--ink);
+        background: var(--cream);
+      }
+
+      .screen-info .num {
+        display: inline-flex;
+        padding: 4px 7px;
+        border: 2px solid var(--ink);
+        background: var(--lime);
+        color: var(--ink);
+        font-size: 11px;
+        font-weight: 900;
+      }
+
+      .screen-info h3 {
+        margin-top: 10px;
+        font-size: 18px;
+        line-height: 1.18;
+        font-weight: 900;
+      }
+
+      .screen-info p {
+        margin-top: 7px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .phone-wrap {
+        padding: 14px;
+        background: #ece8dc;
+      }
+
+      .phone {
+        position: relative;
+        width: 236px;
+        min-height: 512px;
+        margin: 0 auto;
+        overflow: hidden;
+        border: 4px solid var(--ink);
+        border-radius: 26px;
+        background: var(--cream);
+        box-shadow: 8px 8px 0 var(--ink);
+      }
+
+      .phone-status {
+        display: flex;
+        justify-content: space-between;
+        padding: 16px 15px 0;
+        color: #777d70;
+        font-size: 10px;
+        font-weight: 900;
+      }
+
+      .phone-body {
+        padding: 15px 13px 78px;
+      }
+
+      .kicker {
+        color: var(--green);
+        font-size: 10px;
+        font-weight: 950;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+      }
+
+      .mini-title {
+        margin-top: 5px;
+        color: var(--ink);
+        font-size: 20px;
+        line-height: 1.12;
+        font-weight: 950;
+      }
+
+      .copy {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.45;
+        font-weight: 560;
+      }
+
+      .box {
+        margin-top: 11px;
+        padding: 11px;
+        border: 3px solid var(--ink);
+        background: #fff;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .box.lime {
+        background: var(--lime);
+      }
+
+      .box.blue {
+        background: var(--blue);
+      }
+
+      .box.pink {
+        background: var(--pink);
+      }
+
+      .box.amber {
+        background: var(--amber);
+      }
+
+      .box.violet {
+        background: var(--violet);
+      }
+
+      .box-title {
+        color: var(--ink);
+        font-size: 13px;
+        line-height: 1.3;
+        font-weight: 930;
+      }
+
+      .box-text {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.42;
+        font-weight: 560;
+      }
+
+      .thumb {
+        height: 78px;
+        margin-bottom: 8px;
+        border-radius: 8px;
+        background:
+          linear-gradient(135deg, rgba(220, 238, 177, 0.2), transparent),
+          var(--olive);
+      }
+
+      .primary,
+      .secondary {
+        display: grid;
+        width: 100%;
+        min-height: 42px;
+        margin-top: 10px;
+        place-items: center;
+        border: 3px solid var(--ink);
+        background: var(--lime);
+        box-shadow: var(--shadow-sm);
+        color: var(--ink);
+        font-size: 13px;
+        font-weight: 950;
+      }
+
+      .secondary {
+        background: #fff;
+      }
+
+      .input {
+        display: flex;
+        align-items: center;
+        min-height: 42px;
+        margin-top: 10px;
+        padding: 0 10px;
+        border: 3px solid var(--ink);
+        background: #fff;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 650;
+      }
+
+      .list {
+        display: grid;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        padding: 9px;
+        border: 3px solid var(--ink);
+        background: #fff;
+      }
+
+      .mark {
+        flex: 0 0 auto;
+        width: 32px;
+        height: 32px;
+        border: 2px solid var(--ink);
+        background: var(--lime);
+      }
+
+      .row strong {
+        display: block;
+        color: var(--ink);
+        font-size: 11px;
+        line-height: 1.28;
+        font-weight: 900;
+      }
+
+      .row span {
+        display: block;
+        margin-top: 3px;
+        color: var(--muted);
+        font-size: 10px;
+        line-height: 1.35;
+      }
+
+      .progress {
+        height: 8px;
+        margin-top: 10px;
+        border: 2px solid var(--ink);
+        background: #fff;
+      }
+
+      .progress span {
+        display: block;
+        width: 64%;
+        height: 100%;
+        background: var(--lime);
+      }
+
+      .bottom-bar {
+        position: absolute;
+        right: 10px;
+        bottom: 10px;
+        left: 10px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+        padding: 6px;
+        border: 3px solid var(--ink);
+        border-radius: 999px;
+        background: #fff;
+      }
+
+      .bottom-bar span {
+        display: grid;
+        min-height: 34px;
+        place-items: center;
+        border-radius: 999px;
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 900;
+      }
+
+      .bottom-bar span.active {
+        background: var(--lime);
+        color: var(--ink);
+      }
+
+      .note-section {
+        padding: 22px;
+        border-top: 3px solid var(--ink);
+        background: #fff;
+      }
+
+      .note-section h2 {
+        font-size: 24px;
+        font-weight: 950;
+      }
+
+      .note-section p,
+      .note-section li {
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      .note-section p {
+        margin-top: 8px;
+      }
+
+      .note-section ul {
+        display: grid;
+        gap: 7px;
+        margin: 12px 0 0;
+        padding-left: 20px;
+      }
+
+      .audit-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(260px, 1fr));
+        gap: 0;
+      }
+
+      .audit-card {
+        padding: 20px;
+        border-right: 3px solid var(--ink);
+        border-bottom: 3px solid var(--ink);
+        background: #fff;
+      }
+
+      .audit-card:nth-child(2n) {
+        border-right: 0;
+      }
+
+      .audit-card h3 {
+        font-size: 18px;
+        font-weight: 950;
+      }
+
+      .audit-card ul {
+        display: grid;
+        gap: 7px;
+        margin: 10px 0 0;
+        padding-left: 20px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .sources {
+        padding: 18px 22px;
+        border-top: 3px solid var(--ink);
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.8;
+        background: var(--cream);
+      }
+
+      .sources a {
+        color: var(--green);
+        font-weight: 850;
+        text-decoration: none;
+      }
+
+      .sources a:hover {
+        text-decoration: underline;
+      }
+
+      @media (max-width: 1280px) {
+        .screens-grid {
+          grid-template-columns: repeat(3, minmax(250px, 1fr));
+        }
+
+        .loop-grid,
+        .refs-grid,
+        .flow-grid {
+          grid-template-columns: repeat(2, minmax(180px, 1fr));
+        }
+
+        .loop-card:nth-child(5n),
+        .ref-card:nth-child(5n),
+        .flow-card:nth-child(5n) {
+          border-right: 3px solid var(--ink);
+        }
+
+        .loop-card:nth-child(2n),
+        .ref-card:nth-child(2n),
+        .flow-card:nth-child(2n) {
+          border-right: 0;
+        }
+      }
+
+      @media (max-width: 900px) {
+        .screens-grid,
+        .audit-grid,
+        .loop-grid,
+        .refs-grid,
+        .flow-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .loop-card,
+        .ref-card,
+        .flow-card,
+        .audit-card {
+          border-right: 0;
+        }
+      }
+
+      @media (max-width: 560px) {
+        header,
+        main {
+          padding-right: 18px;
+          padding-left: 18px;
+        }
+
+        h1 {
+          font-size: 29px;
+        }
+
+        .section-head {
+          display: block;
+        }
+
+        .badge {
+          display: inline-flex;
+          margin-top: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Note AI MVP1 Neo Brutalism App Design</h1>
+      <p class="subtitle">
+        1차 MVP는 사용자가 선택한 Neo Brutalism 방향으로 갑니다. 핵심 언어는
+        <strong>방금 저장</strong>, <strong>이 부분 저장</strong>,
+        <strong>내 생각 말하기</strong>입니다. 로그인부터 영상 가져오기, 듣기, 저장,
+        노트, 자료, 설정까지 전체 앱 페이지를 한 번에 구현 가능한 기준으로 정리했습니다.
+      </p>
+      <div class="chips">
+        <span class="chip lime">Chosen style: Neo Brutalism</span>
+        <span class="chip">Main color: Block Lime #dceeb1</span>
+        <span class="chip">Primary CTA: 이 부분 저장</span>
+        <span class="chip">Avoid: 캡처, AI 요약툴, 숨김 YouTube 재생</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>5-Round Design Loop</h2>
+            <p>
+              이번 보드는 5회 루프를 거쳤습니다. 스타일을 먼저 정한 뒤 전체 페이지를 만들고,
+              이동 중 사용성, 앱 기능 버튼, 구현 가능성, 가독성까지 검사했습니다.
+            </p>
+          </div>
+          <span class="badge">Loop 5/5</span>
+        </div>
+        <div class="loop-grid">
+          <div class="loop-card">
+            <strong>Loop 1</strong>
+            <h3>Style lock</h3>
+            <p>Neo Brutalism 채택. 굵은 테두리, offset shadow, Block Lime 액션 컬러를 핵심으로 고정했습니다.</p>
+          </div>
+          <div class="loop-card">
+            <strong>Loop 2</strong>
+            <h3>Flow map</h3>
+            <p>로그인 → 영상 가져오기 → 듣기 → 이 부분 저장 → 내 생각 → 노트 → 자료 흐름으로 단순화했습니다.</p>
+          </div>
+          <div class="loop-card">
+            <strong>Loop 3</strong>
+            <h3>Screen inventory</h3>
+            <p>앱 버튼마다 도착해야 하는 기능 페이지를 빠짐없이 배치했습니다. 홈, 듣기, 노트, 자료, 설정을 포함합니다.</p>
+          </div>
+          <div class="loop-card">
+            <strong>Loop 4</strong>
+            <h3>Usability pass</h3>
+            <p>이동 중 조작을 위해 44px 이상 터치 타깃, 하단 주요 버튼, 한 화면 한 목적 원칙을 적용했습니다.</p>
+          </div>
+          <div class="loop-card">
+            <strong>Loop 5</strong>
+            <h3>Implementation audit</h3>
+            <p>React Native/Expo에서 구현 가능한 카드, 버튼, 상태 컴포넌트 단위로 줄이고 DESIGN.md에 계약화했습니다.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>Reference Translation</h2>
+            <p>좋은 사례를 그대로 베끼지 않고, Note AI의 행동과 페이지 구조로 번역했습니다.</p>
+          </div>
+          <span class="badge">Reference fit</span>
+        </div>
+        <div class="refs-grid">
+          <div class="ref-card">
+            <strong>Snipd</strong>
+            <h3>듣다가 저장</h3>
+            <p>핵심은 한 번의 행동으로 현재 순간을 남기는 것. 우리 화면에서는 “이 부분 저장” 버튼이 담당합니다.</p>
+          </div>
+          <div class="ref-card">
+            <strong>Readwise Reader</strong>
+            <h3>근거 있는 노트</h3>
+            <p>YouTube transcript/highlight 흐름을 참고해 노트마다 시간, 근거 구간, 내 생각을 노출합니다.</p>
+          </div>
+          <div class="ref-card">
+            <strong>mymind</strong>
+            <h3>정리 부담 없음</h3>
+            <p>사용자에게 폴더/태그 정리를 시키지 않고, 최근 저장/영상별/키워드별로 자동 묶습니다.</p>
+          </div>
+          <div class="ref-card">
+            <strong>Granola</strong>
+            <h3>조용한 AI</h3>
+            <p>AI를 전면에 과시하지 않고, 사용자가 남긴 말이 깔끔한 노트가 되는 결과 중심 UX로 둡니다.</p>
+          </div>
+          <div class="ref-card">
+            <strong>Voicenotes</strong>
+            <h3>말하고 끝</h3>
+            <p>기록 중 복잡한 설정을 요구하지 않고, 말한 뒤 요약/액션/자료가 한 곳에 생기는 구조를 차용합니다.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>Core App Flow</h2>
+            <p>MVP1의 기능 흐름입니다. 화면 구현은 아래 Screen Inventory 기준으로 진행합니다.</p>
+          </div>
+          <span class="badge">MVP1</span>
+        </div>
+        <div class="flow-grid">
+          <div class="flow-card">
+            <strong>01</strong>
+            <h3>시작 / 로그인</h3>
+            <p>Apple/Google 로그인. 제품 설명은 길게 하지 않고 “듣던 부분을 내 노트로”만 보여줍니다.</p>
+          </div>
+          <div class="flow-card">
+            <strong>02</strong>
+            <h3>영상 가져오기</h3>
+            <p>YouTube 링크 붙여넣기 또는 공유 시트. 등록 후 transcript 처리 상태를 즉시 표시합니다.</p>
+          </div>
+          <div class="flow-card">
+            <strong>03</strong>
+            <h3>듣기</h3>
+            <p>공식 YouTube 플레이어를 보이게 유지하고 현재 재생 시간과 저장 버튼을 함께 둡니다.</p>
+          </div>
+          <div class="flow-card">
+            <strong>04</strong>
+            <h3>내 생각 말하기</h3>
+            <p>저장 직후 음성 메모를 받습니다. “이거 온보딩에 적용” 같은 의도를 놓치지 않습니다.</p>
+          </div>
+          <div class="flow-card">
+            <strong>05</strong>
+            <h3>노트 / 자료</h3>
+            <p>근거 구간, 내 메모, 요약, 적용 아이디어, 검색 키워드, 자료 추천으로 정리합니다.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>Full Screen Inventory</h2>
+            <p>개발자가 화면 단위로 바로 구현할 수 있도록 전체 페이지와 각 버튼의 목적지를 만들었습니다.</p>
+          </div>
+          <span class="badge">12 screens</span>
+        </div>
+        <div class="screens-grid">
+          <article class="screen-card">
+            <div class="screen-info">
+              <span class="num">S01</span>
+              <h3>Welcome</h3>
+              <p>첫 실행. 제품 설명은 한 문장만 두고 로그인으로 보냅니다.</p>
+            </div>
+            <div class="phone-wrap">
+              <div class="phone">
+                <div class="phone-status"><span>9:41</span><span>START</span></div>
+                <div class="phone-body">
+                  <div class="kicker">NOTE AI</div>
+                  <div class="mini-title">듣던 부분을 바로 내 노트로</div>
+                  <p class="copy">YouTube를 듣다가 중요한 순간이 나오면, 말로 저장하고 생각까지 붙입니다.</p>
+                  <div class="box lime">
+                    <div class="box-title">방금 저장</div>
+                    <div class="box-text">현재 구간 + 내 말 + 근거 자막을 한 번에 묶습니다.</div>
+                  </div>
+                  <div class="primary">Apple로 계속하기</div>
+                  <div class="secondary">Google로 계속하기</div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="screen-card">
+            <div class="screen-info">
+              <span class="num">S02</span>
+              <h3>Permission Setup</h3>
+              <p>마이크 권한과 알림 권한을 왜 쓰는지 명확히 설명합니다.</p>
+            </div>
+            <div class="phone-wrap">
+              <div class="phone">
+                <div class="phone-status"><span>9:41</span><span>SETUP</span></div>
+                <div class="phone-body">
+                  <div class="kicker">준비하기</div>
+                  <div class="mini-title">이동 중에도 손 안 쓰고 남기기</div>
+                  <div class="box lime">
+                    <div class="box-title">마이크</div>
+                    <div class="box-text">“이 부분 저장”과 내 생각 메모를 인식합니다.</div>
+                    <div class="primary">마이크 허용</div>
+                  </div>
+                  <div class="box">
+                    <div class="box-title">알림</div>
+                    <div class="box-text">노트와 자료가 준비되면 알려줍니다.</div>
+                    <div class="secondary">나중에 하기</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="screen-card">
+            <div class="screen-info">
+              <span class="num">S03</span>
+              <h3>Home</h3>
+              <p>오늘 이어 들을 영상과 최근 노트를 보여줍니다. 메인 CTA는 영상 가져오기.</p>
+            </div>
+            <div class="phone-wrap">
+              <div class="phone">
+                <div class="phone-status"><span>9:41</span><span>HOME</span></div>
+                <div class="phone-body">
+                  <div class="kicker">오늘</div>
+                  <div class="mini-title">어떤 영상을 들을까요?</div>
+                  <div class="box lime">
+                    <div class="box-title">새 영상 가져오기</div>
+                    <div class="box-text">YouTube 링크를 붙여넣거나 공유로 보냅니다.</div>
+                    <div class="primary">영상 가져오기</div>
+                  </div>
+                  <div class="list">
+                    <div class="row"><div class="mark"></div><div><strong>PMF 전에 광고비 금지</strong><span>노트 2개 · 자료 3개</span></div></div>
+                    <div class="row"><div class="mark" style="background: var(--blue)"></div><div><strong>리텐션 루프 설명</strong><span>마지막 재생 12:30</span></div></div>
+                  </div>
+                </div>
+                <div class="bottom-bar"><span class="active">홈</span><span>듣기</span><span>노트</span></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="screen-card">
+            <div class="screen-info">
+              <span class="num">S04</span>
+              <h3>Import Video</h3>
+              <p>링크 입력/공유 시트 진입 화면. URL 검증 오류도 이 화면에서 처리합니다.</p>
+            </div>
+            <div class="phone-wrap">
+              <div class="phone">
+                <div class="phone-status"><span>9:41</span><span>IMPORT</span></div>
+                <div class="phone-body">
+                  <div class="kicker">영상 가져오기</div>
+                  <div class="mini-title">YouTube 링크를 넣으세요</div>
+                  <div class="input">https://youtube.com/watch?v=...</div>
+                  <div class="primary">가져오기</div>
+                  <div class="box amber">
+                    <div class="box-title">공유로 보내기</div>
+                    <div class="box-text">YouTube 앱의 공유 버튼에서 Note AI를 선택해도 됩니다.</div>
+                  </div>
+                  <div class="box">
+                    <div class="box-title">오류 예시</div>
+                    <div class="box-text">지원하지 않는 링크입니다. YouTube 영상 URL을 넣어주세요.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="screen-card">
+            <div class="screen-info">
+              <span class="num">S05</span>
+              <h3>Source Processing</h3>
+              <p>메타데이터/자막 처리 상태. 사용자는 처리 중에도 플레이어로 갈 수 있습니다.</p>
+            </div>
+            <div class="phone-wrap">
+              <div class="phone">
+                <div class="phone-status"><span>9:41</span><span>READY?</span></div>
+                <div class="phone-body">
+                  <div class="kicker">영상 준비 중</div>
+                  <div class="mini-title">자막과 정보를 확인하고 있어요</div>
+                  <div class="box">
+                    <div class="thumb"></div>
+                    <div class="box-title">PMF 전에 광고비 금지</div>
+                    <div class="box-text">채널명 · 24분</div>
+                    <div class="progress"><span></span></div>
+                  </div>
+                  <div class="box lime">
+                    <div class="box-title">먼저 듣기 가능</div>
+                    <div class="box-text">자막 처리가 끝나면 근거 구간이 노트에 붙습니다.</div>
+                    <div class="primary">지금 듣기</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="screen-card">
+            <div class="screen-info">
+              <span class="num">S06</span>
+              <h3>Listen / Save</h3>
+              <p>사용자가 고른 기준 화면. 공식 플레이어 + 이 부분 저장 + 내 생각 프리뷰.</p>
+            </div>
+            <div class="phone-wrap">
+              <div class="phone">
+                <div class="phone-status"><span>9:41</span><span>READY</span></div>
+                <div class="phone-body">
+                  <div class="kicker">LISTENING</div>
+                  <div class="mini-title">방금 들은 걸 놓치지 마세요</div>
+                  <div class="box">
+                    <div class="thumb"></div>
+                    <div class="box-title">PMF 전 광고비 금지</div>
+                    <div class="box-text">12:30</div>
+                  </div>
+                  <div class="box lime">
+                    <div class="box-title">이 부분 저장</div>
+                    <div class="box-text">내 말까지 붙여서 한국어 노트로 정리합니다.</div>
+                    <div class="primary">지금 저장</div>
+                  </div>
+                  <div class="box">
+                    <div class="box-title">내 생각</div>
+                    <div class="box-text">“우리 앱 온보딩에 적용”</div>
+                  </div>
+                </div>
+                <div class="bottom-bar"><span>홈</span><span class="active">듣기</span><span>노트</span></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="screen-card">
+            <div class="screen-info">
+              <span class="num">S07</span>
+              <h3>Voice Memo</h3>
+              <p>저장 직후 생각을 말하는 화면. 녹음 상태와 종료 CTA가 가장 크게 보여야 합니다.</p>
+            </div>
+            <div class="phone-wrap">
+              <div class="phone">
+                <div class="phone-status"><span>9:41</span><span>REC 00:08</span></div>
+                <div class="phone-body">
+                  <div class="kicker">내 생각 말하기</div>
+                  <div class="mini-title">왜 저장했는지 말해주세요</div>
+                  <div class="box pink">
+                    <div class="box-title">듣고 있어요</div>
+                    <div class="box-text">“이거 우리 앱 온보딩 리텐션 루프에 적용...”</div>
+                    <div class="primary">말 끝났어요</div>
+                  </div>
+                  <div class="box">
+                    <div class="box-title">저장 구간</div>
+                    <div class="box-text">12:30 - 13:40 · 정확 저장</div>
+                  </div>
+                  <div class="secondary">메모 없이 저장</div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="screen-card">
+            <div class="screen-info">
+              <span class="num">S08</span>
+              <h3>Note Processing</h3>
+              <p>사용자에게 기다리는 이유를 보여줍니다. 실패 시 재시도/메모만 저장을 제공합니다.</p>
+            </div>
+            <div class="phone-wrap">
+              <div class="phone">
+                <div class="phone-status"><span>9:41</span><span>WORKING</span></div>
+                <div class="phone-body">
+                  <div class="kicker">노트로 정리 중</div>
+                  <div class="mini-title">방금 저장한 부분을 묶고 있어요</div>
+                  <div class="box lime">
+                    <div class="box-title">1. 구간 찾기</div>
+                    <div class="box-text">현재 재생 시간 주변 자막을 선택합니다.</div>
+                    <div class="progress"><span></span></div>
+                  </div>
+                  <div class="box">
+                    <div class="box-title">2. 내 생각 반영</div>
+                    <div class="box-text">음성 메모 의도를 노트 형식에 맞춥니다.</div>
+                  </div>
+                  <div class="box">
+                    <div class="box-title">3. 자료 키워드 만들기</div>
+                    <div class="box-text">필요한 추가 검색어를 추천합니다.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="screen-card">
+            <div class="screen-info">
+              <span class="num">S09</span>
+              <h3>Note Detail</h3>
+              <p>가장 중요한 결과 화면. 제목, 내 생각, 핵심 요약, 근거 구간, 자료 CTA.</p>
+            </div>
+            <div class="phone-wrap">
+              <div class="phone">
+                <div class="phone-status"><span>9:41</span><span>NOTE</span></div>
+                <div class="phone-body">
+                  <div class="kicker">아이디어 노트</div>
+                  <div class="mini-title">광고비보다 리텐션 루프가 먼저다</div>
+                  <div class="box lime">
+                    <div class="box-title">내 생각</div>
+                    <div class="box-text">온보딩에서 첫 반복 행동을 만들기.</div>
+                  </div>
+                  <div class="box">
+                    <div class="box-title">핵심 요약</div>
+                    <div class="box-text">PMF 전에는 유입보다 재방문 루프를 확인해야 한다.</div>
+                  </div>
+                  <div class="box amber">
+                    <div class="box-title">근거 구간</div>
+                    <div class="box-text">12:30 - 13:40 · “반복 사용이 보이지 않으면...”</div>
+                  </div>
+                  <div class="primary">관련 자료 찾기</div>
+                </div>
+                <div class="bottom-bar"><span>홈</span><span>듣기</span><span class="active">노트</span></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="screen-card">
+            <div class="screen-info">
+              <span class="num">S10</span>
+              <h3>Research</h3>
+              <p>추가 자료 화면. 추천 키워드, 출처 URL, 왜 읽어야 하는지까지 보여줍니다.</p>
+            </div>
+            <div class="phone-wrap">
+              <div class="phone">
+                <div class="phone-status"><span>9:41</span><span>RESEARCH</span></div>
+                <div class="phone-body">
+                  <div class="kicker">관련 자료</div>
+                  <div class="mini-title">이 주제를 더 파볼까요?</div>
+                  <div class="box lime">
+                    <div class="box-title">추천 키워드</div>
+                    <div class="box-text">retention loop · activation metric · aha moment</div>
+                  </div>
+                  <div class="list">
+                    <div class="row"><div class="mark" style="background: var(--blue)"></div><div><strong>Retention loop 사례</strong><span>왜 유용한지 1줄 요약 · URL</span></div></div>
+                    <div class="row"><div class="mark" style="background: var(--violet)"></div><div><strong>Onboarding metric</strong><span>적용 포인트 포함 · URL</span></div></div>
+                  </div>
+                  <div class="primary">자료 더 찾기</div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="screen-card">
+            <div class="screen-info">
+              <span class="num">S11</span>
+              <h3>Library / Search</h3>
+              <p>저장한 순간을 다시 찾는 화면. 사용자가 직접 정리하지 않아도 됩니다.</p>
+            </div>
+            <div class="phone-wrap">
+              <div class="phone">
+                <div class="phone-status"><span>9:41</span><span>LIBRARY</span></div>
+                <div class="phone-body">
+                  <div class="kicker">보관함</div>
+                  <div class="mini-title">저장한 생각을 다시 찾기</div>
+                  <div class="input">검색: 온보딩, 리텐션...</div>
+                  <div class="list">
+                    <div class="row"><div class="mark"></div><div><strong>PMF 전에 광고비 금지</strong><span>노트 2개 · 자료 3개</span></div></div>
+                    <div class="row"><div class="mark" style="background: var(--amber)"></div><div><strong>리텐션 루프</strong><span>아이디어 노트 · 어제</span></div></div>
+                    <div class="row"><div class="mark" style="background: var(--pink)"></div><div><strong>콘텐츠 초안</strong><span>블로그 글감 · 3일 전</span></div></div>
+                  </div>
+                </div>
+                <div class="bottom-bar"><span class="active">홈</span><span>듣기</span><span>노트</span></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="screen-card">
+            <div class="screen-info">
+              <span class="num">S12</span>
+              <h3>Settings</h3>
+              <p>계정, 권한, 저장 문구, 데이터/정책 설명을 모읍니다.</p>
+            </div>
+            <div class="phone-wrap">
+              <div class="phone">
+                <div class="phone-status"><span>9:41</span><span>SETTINGS</span></div>
+                <div class="phone-body">
+                  <div class="kicker">설정</div>
+                  <div class="mini-title">내 저장 방식 관리</div>
+                  <div class="list">
+                    <div class="row"><div class="mark"></div><div><strong>계정</strong><span>Apple ID로 로그인됨</span></div></div>
+                    <div class="row"><div class="mark" style="background: var(--blue)"></div><div><strong>마이크 권한</strong><span>허용됨 · 변경하기</span></div></div>
+                    <div class="row"><div class="mark" style="background: var(--amber)"></div><div><strong>저장 문구</strong><span>“이 부분 저장”</span></div></div>
+                    <div class="row"><div class="mark" style="background: var(--violet)"></div><div><strong>YouTube 사용 안내</strong><span>플레이어를 숨기지 않음</span></div></div>
+                  </div>
+                </div>
+                <div class="bottom-bar"><span>홈</span><span>듣기</span><span class="active">설정</span></div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>Final Audit</h2>
+            <p>이 디자인을 실제 MVP 구현에 넘기기 전 마지막 검사 결과입니다.</p>
+          </div>
+          <span class="badge">Pass with notes</span>
+        </div>
+        <div class="audit-grid">
+          <div class="audit-card">
+            <h3>채택할 것</h3>
+            <ul>
+              <li>굵은 검정 테두리와 offset shadow.</li>
+              <li>Block Lime은 메인 행동과 상태 카드에만 사용.</li>
+              <li>사용자 언어는 `이 부분 저장`, `방금 저장`, `내 생각 말하기`.</li>
+              <li>한 화면에는 하나의 주요 행동만.</li>
+              <li>노트에는 항상 원본 영상, 시간, 근거 구간, 내 생각을 표시.</li>
+            </ul>
+          </div>
+          <div class="audit-card">
+            <h3>피할 것</h3>
+            <ul>
+              <li>`캡처`를 사용자-facing CTA로 쓰지 않기.</li>
+              <li>AI 마법/반짝임/그라데이션으로 결과를 과장하지 않기.</li>
+              <li>Neo Brutalism을 너무 장식적으로 써서 가독성을 해치지 않기.</li>
+              <li>YouTube 플레이어를 숨기거나 오디오 앱처럼 보이게 하지 않기.</li>
+              <li>온보딩에서 긴 설명을 강요하지 않기.</li>
+            </ul>
+          </div>
+          <div class="audit-card">
+            <h3>구현 체크</h3>
+            <ul>
+              <li>모든 터치 타깃은 최소 44px.</li>
+              <li>카드 radius는 0-8px, 전화기 프레임/하단 탭만 크게 둠.</li>
+              <li>그림자는 `4px/7px solid black offset` 토큰으로 통일.</li>
+              <li>텍스트는 한국어 줄바꿈을 고려해 여유 폭 확보.</li>
+            </ul>
+          </div>
+          <div class="audit-card">
+            <h3>최종 판단</h3>
+            <ul>
+              <li>1차 MVP는 Neo Brutalism으로 진행.</li>
+              <li>개발 전 기준은 `DESIGN.md` Active 버전.</li>
+              <li>이 HTML은 시각 참조, `DESIGN.md`는 구현 계약.</li>
+              <li>다음 단계는 구현 전 `PLAN.md` 화면 태스크와 맞추기.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="sources">
+          References:
+          <a href="https://www.snipd.com/">Snipd</a>,
+          <a href="https://readwise.io/read">Readwise Reader</a>,
+          <a href="https://mymind.com/">mymind</a>,
+          <a href="https://www.granola.ai/">Granola</a>,
+          <a href="https://voicenotes.com/">Voicenotes</a>,
+          <a href="https://developer.apple.com/design/human-interface-guidelines/onboarding">Apple HIG Onboarding</a>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

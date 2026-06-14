@@ -24,6 +24,7 @@ MVP2 is **YouTube 앱 연동형 추정 저장**:
 
 ## Planning Docs
 
+- [Docs Index](docs/INDEX.md)
 - [PRD](docs/PRD.md)
 - [TECHSPEC](docs/TECHSPEC.md)
 - [PLAN](docs/PLAN.md)
@@ -48,6 +49,20 @@ omx exec -C /Users/dd/Documents/note-ai --sandbox workspace-write "$(cat docs/CO
 ```
 
 Plain Codex CLI remains a fallback, but the preferred development entry point is OMX.
+
+## Workflow Gate
+
+Do not start implementation before the design baseline is checked. The intended workflow is:
+
+```txt
+PRD
+-> TECHSPEC
+-> PLAN
+-> DESIGN decision lock
+-> MVP implementation
+```
+
+`DESIGN.md` lives at the project root because OMX `$design` uses repo-local `DESIGN.md` as the canonical design contract.
 
 ## Scope Guard
 

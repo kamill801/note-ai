@@ -14,12 +14,13 @@ Core product:
 
 Read these files before implementation:
 
-1. `docs/PRD.md` - product requirements and MVP definition.
-2. `docs/TECHSPEC.md` - architecture, data model, API, AI pipeline.
-3. `docs/PLAN.md` - implementation order and task checklist.
-4. `DESIGN.md` - UX, UI, interaction, and content rules.
-5. `docs/RESEARCH.md` - YouTube/LilysAI research and policy constraints.
-6. `.omx/specs/deep-interview-mobile-knowledge-capture.md` - clarified decision lock.
+1. `docs/INDEX.md` - source-of-truth map and workflow gate.
+2. `docs/PRD.md` - product requirements and MVP definition.
+3. `docs/TECHSPEC.md` - architecture, data model, API, AI pipeline.
+4. `docs/PLAN.md` - implementation order and task checklist.
+5. `DESIGN.md` - UX, UI, interaction, and content rules.
+6. `docs/RESEARCH.md` - YouTube/LilysAI research and policy constraints.
+7. `.omx/specs/deep-interview-mobile-knowledge-capture.md` - clarified decision lock.
 
 If documents conflict, prefer the newer implementation intent:
 
@@ -73,6 +74,7 @@ Assume this stack unless implementation evidence strongly suggests otherwise:
 - Check `omx status` when workflow state matters.
 - Do not use `omx explore`; it is deprecated in this workspace guidance.
 - Clear stale OMX state only when it blocks current work.
+- Before implementation, run the `docs/PLAN.md` Pre-Implementation Design Gate and treat `DESIGN.md` as the design decision contract.
 - Keep `TECHSPEC.md` as architecture/spec only; do not put task sequencing there.
 - Keep sequencing in `docs/PLAN.md`.
 - Update docs when implementation decisions materially change.

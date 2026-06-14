@@ -1,0 +1,18 @@
+{
+  "folders": [
+    {
+      "name": "note-ai",
+      "path": "."
+    },
+    {
+      "name": "docs-source-of-truth",
+      "path": "docs"
+    }
+  ],
+  "settings": {
+    "terminal.integrated.cwd": "${workspaceFolder:note-ai}",
+    "files.trimTrailingWhitespace": true,
+    "editor.formatOnSave": true,
+    "explorer.compactFolders": false
+  }
+}
