@@ -1,0 +1,130 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "OMX: Direct Workspace",
+      "type": "shell",
+      "command": "omx --direct",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "focus": true
+      }
+    },
+    {
+      "label": "OMX: Tmux Workspace",
+      "type": "shell",
+      "command": "omx --tmux",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "focus": true
+      }
+    },
+    {
+      "label": "OMX: Start MVP1 Exec",
+      "type": "shell",
+      "command": "omx exec -C ${workspaceFolder} --sandbox workspace-write \"$(cat docs/CODEX_MVP1_PROMPT.md)\"",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "focus": true
+      }
+    },
+    {
+      "label": "OMX: Resume",
+      "type": "shell",
+      "command": "omx resume",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "focus": true
+      }
+    },
+    {
+      "label": "OMX: Status",
+      "type": "shell",
+      "command": "omx status",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "OMX: Doctor",
+      "type": "shell",
+      "command": "omx doctor",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Codex: Interactive Workspace",
+      "type": "shell",
+      "command": "codex -C ${workspaceFolder} --sandbox workspace-write --ask-for-approval on-request",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "focus": true
+      }
+    },
+    {
+      "label": "Codex: Start MVP1 Implementation",
+      "type": "shell",
+      "command": "codex -C ${workspaceFolder} --sandbox workspace-write --ask-for-approval on-request \"$(cat docs/CODEX_MVP1_PROMPT.md)\"",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "focus": true
+      }
+    },
+    {
+      "label": "Codex: Resume Last Session",
+      "type": "shell",
+      "command": "codex -C ${workspaceFolder} resume --last",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "focus": true
+      }
+    },
+    {
+      "label": "Project: Git Status",
+      "type": "shell",
+      "command": "git status --short",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    }
+  ]
+}

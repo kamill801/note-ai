@@ -1,0 +1,6 @@
+{
+  "terminal.integrated.cwd": "${workspaceFolder}",
+  "files.trimTrailingWhitespace": true,
+  "editor.formatOnSave": true
+}
+
