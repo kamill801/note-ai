@@ -9,6 +9,24 @@ export type SourceSummary = {
   transcriptStatus: 'pending' | 'ready' | 'unavailable' | 'failed';
 };
 
+export type BackendHealth = {
+  status: 'ok';
+  service: string;
+  appEnv: string;
+  database: {
+    host: string;
+    port: number;
+    database: string;
+    configured: boolean;
+  };
+  policy: {
+    youtubePlayback: string;
+    hiddenPlayback: false;
+    audioDownload: false;
+  };
+  checkedAt: string;
+};
+
 export type TimestampCapture = {
   id: string;
   sourceId: string;

@@ -25,7 +25,7 @@ if (!rootPackage.workspaces?.includes('backend') || !rootPackage.workspaces?.inc
 }
 
 const envExample = readFileSync('.env.example', 'utf8');
-for (const key of ['PUBLIC_API_BASE_URL', 'PORT', 'DATABASE_URL', 'OPENAI_API_KEY']) {
+for (const key of ['EXPO_PUBLIC_API_BASE_URL', 'PORT', 'DATABASE_URL', 'OPENAI_API_KEY']) {
   if (!envExample.includes(`${key}=`)) {
     console.error(`.env.example missing ${key}`);
     process.exit(1);

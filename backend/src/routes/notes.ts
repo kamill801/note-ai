@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { readJsonBody, writeJson } from '../http/json.ts';
-import { generateNoteForCapture, getNoteByCaptureId } from '../services/note-service.ts';
+import { generateNoteForCapture, getNoteByCaptureId, listNotes } from '../services/note-service.ts';
 
 export async function handleNotes(request: IncomingMessage, response: ServerResponse): Promise<void> {
   const url = new URL(request.url ?? '/', 'http://localhost');
@@ -8,7 +8,7 @@ export async function handleNotes(request: IncomingMessage, response: ServerResp
   if (request.method === 'GET') {
     const captureId = url.searchParams.get('captureId');
     if (!captureId) {
-      writeJson(response, 400, { error: 'missing_capture_id', message: 'captureId query는 필수입니다.' });
+      writeJson(response, 200, { notes: listNotes() });
       return;
     }
     writeJson(response, 200, { note: getNoteByCaptureId(captureId) ?? null });

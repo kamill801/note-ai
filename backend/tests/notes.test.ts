@@ -59,6 +59,12 @@ test('POST /notes generates and GET /notes reads note', async () => {
     const getPayload = await getResponse.json();
     assert.equal(getResponse.status, 200);
     assert.equal(getPayload.note.title, createPayload.note.title);
+
+    const listResponse = await fetch(`${baseUrl}/notes`);
+    const listPayload = await listResponse.json();
+    assert.equal(listResponse.status, 200);
+    assert.equal(listPayload.notes.length, 1);
+    assert.equal(listPayload.notes[0].id, createPayload.note.id);
   } finally {
     server.close();
   }

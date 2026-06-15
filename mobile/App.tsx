@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { colors, spacing } from './src/design/tokens';
@@ -8,8 +8,11 @@ import { ImportSourceScreen } from './src/screens/ImportSourceScreen';
 import { PlayerScreen } from './src/screens/PlayerScreen';
 import { CaptureModeScreen } from './src/screens/CaptureModeScreen';
 import { NoteDetailScreen } from './src/screens/NoteDetailScreen';
+import { NoteLibraryScreen } from './src/screens/NoteLibraryScreen';
+import { SettingsScreen } from './src/screens/SettingsScreen';
+import { listNotes, listSources } from './src/services/api';
 
-type Tab = 'home' | 'import' | 'player' | 'capture' | 'note';
+type Tab = 'home' | 'import' | 'player' | 'capture' | 'library' | 'noteDetail' | 'settings';
 
 
 export default function App() {
@@ -18,6 +21,33 @@ export default function App() {
   const [latestCapture, setLatestCapture] = useState<TimestampCapture | null>(null);
   const [latestNote, setLatestNote] = useState<NoteRecord | null>(null);
   const [latestResearchJob, setLatestResearchJob] = useState<ResearchJob | null>(null);
+  const [hydrating, setHydrating] = useState(true);
+  const [startupError, setStartupError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    async function hydrateSession() {
+      setStartupError(null);
+      try {
+        const [sources, notes] = await Promise.all([listSources(), listNotes()]);
+        if (!active) return;
+        setSelectedSource((current) => current ?? sources[0] ?? null);
+        setLatestNote((current) => current ?? notes[0] ?? null);
+      } catch (caught) {
+        if (!active) return;
+        setStartupError(caught instanceof Error ? caught.message : '로컬 API 상태를 확인할 수 없습니다.');
+      } finally {
+        if (active) setHydrating(false);
+      }
+    }
+
+    void hydrateSession();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   function handleSourceReady(source: SourceSummary) {
     setSelectedSource(source);
@@ -37,25 +67,44 @@ export default function App() {
   function handleNoteReady(note: NoteRecord) {
     setLatestNote(note);
     setLatestResearchJob(null);
-    setTab('note');
+    setTab('noteDetail');
+  }
+
+  function handleOpenNote(note: NoteRecord) {
+    setLatestNote(note);
+    setLatestResearchJob(null);
+    setTab('noteDetail');
   }
 
   return (
     <View style={styles.root}>
       <StatusBar style="dark" />
       <View style={styles.content}>
-        {tab === 'home' ? <HomeScreen /> : null}
+        {tab === 'home' ? (
+          <HomeScreen
+            hydrating={hydrating}
+            latestNote={latestNote}
+            latestSource={selectedSource}
+            onImportPress={() => setTab('import')}
+            onListenPress={() => setTab('player')}
+            onNotesPress={() => setTab(latestNote ? 'noteDetail' : 'library')}
+            onSettingsPress={() => setTab('settings')}
+            startupError={startupError}
+          />
+        ) : null}
         {tab === 'import' ? <ImportSourceScreen onSourceReady={handleSourceReady} /> : null}
         {tab === 'player' ? <PlayerScreen source={selectedSource} onCaptureSaved={handleCaptureSaved} /> : null}
         {tab === 'capture' ? <CaptureModeScreen latestCapture={latestCapture} onNoteReady={handleNoteReady} /> : null}
-        {tab === 'note' ? <NoteDetailScreen note={latestNote} researchJob={latestResearchJob} onResearchReady={setLatestResearchJob} /> : null}
+        {tab === 'library' ? <NoteLibraryScreen latestNote={latestNote} onOpenNote={handleOpenNote} /> : null}
+        {tab === 'noteDetail' ? <NoteDetailScreen note={latestNote} researchJob={latestResearchJob} onResearchReady={setLatestResearchJob} /> : null}
+        {tab === 'settings' ? <SettingsScreen /> : null}
       </View>
       <View style={styles.tabBar}>
         <TabButton active={tab === 'home'} label="홈" onPress={() => setTab('home')} />
-        <TabButton active={tab === 'import'} label="링크 등록" onPress={() => setTab('import')} />
-        <TabButton active={tab === 'player'} label="정확 저장" onPress={() => setTab('player')} />
-        <TabButton active={tab === 'capture'} label="내 생각" onPress={() => setTab('capture')} />
-        <TabButton active={tab === 'note'} label="노트" onPress={() => setTab('note')} />
+        <TabButton active={tab === 'import'} label="가져오기" onPress={() => setTab('import')} />
+        <TabButton active={tab === 'player'} label="듣기" onPress={() => setTab('player')} />
+        <TabButton active={tab === 'library' || tab === 'noteDetail'} label="노트" onPress={() => setTab('library')} />
+        <TabButton active={tab === 'settings'} label="설정" onPress={() => setTab('settings')} />
       </View>
     </View>
   );

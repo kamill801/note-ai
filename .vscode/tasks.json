@@ -16,7 +16,21 @@
       }
     },
     {
-      "label": "OMX: Tmux Workspace (Autonomous Local Dev)",
+      "label": "OMX: Direct Continue MVP1 (No Tmux)",
+      "type": "shell",
+      "command": "omx --direct --yolo \"$(cat docs/CODEX_CONTINUE_PROMPT.md)\"",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "focus": true
+      }
+    },
+    {
+      "label": "OMX: Tmux Workspace (Optional, Copy-Unfriendly)",
       "type": "shell",
       "command": "omx --tmux --yolo",
       "options": {

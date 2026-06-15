@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { borders, colors, radii, shadows, spacing, typography } from '../design/tokens';
 import type { SourceSummary } from '../domain/source';
-import { importDemoTranscript, registerSource } from '../services/api';
+import { importDemoTranscript, listSources, registerSource } from '../services/api';
 
 type Props = {
   onSourceReady: (source: SourceSummary) => void;
@@ -13,8 +13,25 @@ export function ImportSourceScreen({ onSourceReady }: Props) {
   const [sources, setSources] = useState<SourceSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loadingState, setLoadingState] = useState<'idle' | 'registering' | 'demo'>('idle');
+  const [loadingSources, setLoadingSources] = useState(false);
 
   const canSubmit = useMemo(() => url.trim().length > 0 && loadingState === 'idle', [loadingState, url]);
+
+  useEffect(() => {
+    void refreshSources();
+  }, []);
+
+  async function refreshSources() {
+    setLoadingSources(true);
+    setError(null);
+    try {
+      setSources(await listSources());
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : '등록한 영상을 불러올 수 없습니다.');
+    } finally {
+      setLoadingSources(false);
+    }
+  }
 
   async function handleSubmit() {
     setLoadingState('registering');
@@ -96,10 +113,10 @@ export function ImportSourceScreen({ onSourceReady }: Props) {
         <View style={styles.listCard}>
           <Text style={styles.sectionTitle}>등록한 영상</Text>
           {sources.length === 0 ? (
-            <Text style={styles.emptyText}>아직 등록한 영상이 없습니다. YouTube 링크를 붙여넣어 시작하세요.</Text>
+            <Text style={styles.emptyText}>{loadingSources ? '등록한 영상을 불러오는 중입니다.' : '아직 등록한 영상이 없습니다. YouTube 링크를 붙여넣어 시작하세요.'}</Text>
           ) : (
             sources.map((source) => (
-              <View key={source.id} style={styles.sourceRow}>
+              <Pressable key={source.id} accessibilityRole="button" onPress={() => onSourceReady(source)} style={({ pressed }) => [styles.sourceRow, pressed && styles.buttonPressed]}>
                 <View style={styles.thumbnailPlaceholder}>
                   <Text style={styles.thumbnailText}>YT</Text>
                 </View>
@@ -108,7 +125,7 @@ export function ImportSourceScreen({ onSourceReady }: Props) {
                   <Text style={styles.sourceMeta}>videoId · {source.videoId}</Text>
                   <Text style={styles.sourceMeta}>transcript · {source.transcriptStatus}</Text>
                 </View>
-              </View>
+              </Pressable>
             ))
           )}
         </View>

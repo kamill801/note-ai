@@ -60,6 +60,10 @@ export function getNoteById(noteId: string): NoteRecord | undefined {
   return notesById.get(noteId);
 }
 
+export function listNotes(): NoteRecord[] {
+  return [...notesById.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
 export function resetNotesForTest(): void {
   notesById.clear();
   notesByCaptureId.clear();

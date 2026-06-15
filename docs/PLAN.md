@@ -146,6 +146,16 @@ Acceptance:
   - Acceptance: health check returns OK.
   - Test: API request.
 
+- DONE: mobile API base URL environment wiring.
+  - Files likely affected: `mobile/src/services/api.ts`, `.env.example`
+  - Acceptance: mobile API client reads `EXPO_PUBLIC_API_BASE_URL` with a safe local fallback.
+  - Test: mobile typecheck and workspace check.
+
+- DONE: backend + Expo Dev Client local smoke preparation.
+  - Files likely affected: `scripts/dev-client-smoke.mjs`, `docs/DEVELOPMENT.md`
+  - Acceptance: one command starts backend dev server and Expo Dev Client Metro, then verifies backend `/health` and Metro `/status`.
+  - Test: `npm run smoke:dev-client`.
+
 - DONE: database schema setup.
   - Files likely affected: `backend/db/`
   - Acceptance: migration creates required tables.
@@ -361,3 +371,25 @@ Session stop reason: user requested temporary stop (`잠깐 중단`).
 - [x] Verification: Expo Metro startup smoke reached `Waiting on http://localhost:8081`; process was stopped afterward.
 - [ ] Live DB connection remains unverified in this runtime: `npm run db:check` returned `ECONNREFUSED`; `docker compose up -d postgres` could not run because `docker` is not installed.
 - [ ] Physical device/simulator smoke for YouTube player timestamp accuracy and microphone recording remains manual.
+
+### 2026-06-15 — Direct Ralph Continuation
+
+- [x] Added VS Code/Codex continuation helpers for direct non-tmux work:
+  - `docs/CODEX_CONTINUE_PROMPT.md`
+  - `.vscode/tasks.json` task `OMX: Direct Continue MVP1 (No Tmux)`
+  - `docs/DEVELOPMENT.md` direct-mode guidance.
+- [x] Added `scripts/dev-client-smoke.mjs` and `npm run smoke:dev-client` for local backend + Expo Dev Client readiness checks.
+- [x] Connected product-level mobile navigation:
+  - Home now receives latest source/note state and routes to import, listen, note library/detail, and settings.
+  - Added `NoteLibraryScreen` for saved note reopening.
+  - Added `SettingsScreen` for local API/provider/policy visibility.
+  - App startup now hydrates the latest source and note from `GET /sources` and `GET /notes` while the local in-memory backend process is alive.
+- [x] Backend `GET /notes` now returns a note library list when no `captureId` is provided.
+- [x] Mobile API client now exposes health/source/note list helpers, API URL visibility, and clearer network/JSON errors.
+- [x] Aligned Expo SDK dependency check by updating mobile TypeScript to Expo's expected range and adding the TypeScript 6 deprecation setting.
+- [x] Verification: `npm run typecheck` passed after mobile routing/session hydration changes.
+- [x] Verification: `npm run qa` passed — 23 backend tests, migration validation, mobile design contract, typecheck, backend smoke, MVP1 API smoke, policy check.
+- [x] Verification: `npm run smoke:dev-client` passed on alternate local ports `3011`/`8083`.
+- [x] Verification: `npm --workspace mobile exec -- expo install --check` reports dependencies up to date using the local Expo dependency map.
+- [ ] Persistent recovery across backend restarts remains future work until the PostgreSQL layer replaces the current in-memory MVP services.
+- [ ] Physical device/simulator smoke remains: visible YouTube player behavior, microphone recording, and timestamp accuracy in a real Expo Dev Client build. Current runtime evidence: `xcrun simctl list devices booted` fails because `simctl` is unavailable, and `adb` is not installed.

@@ -129,3 +129,37 @@ Scope: Preserve current changes and continue MVP1 from existing docs/implementat
 ### Resume from
 
 Next safe steps: run the backend dev server plus Expo Dev Client on a device/simulator, verify the mobile happy path end to end, then decide whether to harden local persistence or add provider-backed STT/search behind explicit credentials.
+
+## 2026-06-15 — Direct Ralph Continuation
+
+Scope: Continue autonomous MVP1 product completion from the existing backend/mobile vertical slice, without adding paid APIs, secrets, production deploys, or destructive operations.
+
+### Completed checklist
+
+- [x] Loaded the Ralph workflow guidance and preserved Ralph state in `.omx/state/ralph-state.json`.
+- [x] Added direct-mode VS Code/OMX continuation helper `docs/CODEX_CONTINUE_PROMPT.md`.
+- [x] Added `OMX: Direct Continue MVP1 (No Tmux)` to `.vscode/tasks.json`.
+- [x] Added `scripts/dev-client-smoke.mjs` and `npm run smoke:dev-client`.
+- [x] Added backend note library listing through `GET /notes` without `captureId`.
+- [x] Added mobile note library and settings screens.
+- [x] Connected `App.tsx` routing: `홈`, `가져오기`, `듣기`, `노트`, `설정`.
+- [x] Added app startup hydration from `GET /sources` and `GET /notes` for the current local in-memory backend process.
+- [x] Hardened mobile API errors for network failure and invalid JSON.
+- [x] Updated `docs/PLAN.md`, `docs/TECHSPEC.md`, and `docs/DEVELOPMENT.md` to match the current local API and mobile flow.
+- [x] Updated mobile TypeScript to Expo SDK 56's expected range and added the TypeScript 6 `ignoreDeprecations` setting.
+- [x] Reconciled architect review findings for route-doc drift and process-local hydration wording.
+
+### Verification evidence
+
+- `npm run typecheck` passed.
+- First `npm run qa` failed in the sandbox because backend tests could not bind `127.0.0.1` (`listen EPERM`).
+- Final `npm run qa` with local network permission passed: 23 backend tests, migration validation, mobile design contract, backend/mobile typecheck, backend health smoke, MVP1 API smoke, and policy check.
+- Final `npm run smoke:dev-client` passed on alternate local ports `3011`/`8083`.
+- `npm --workspace mobile exec -- expo install --check` reports dependencies up to date using the local Expo dependency map.
+- `npm audit --omit=dev` still reports Expo transitive `xcode -> uuid` moderate advisory; non-force remediation would not fix it, and `npm audit fix --force` would downgrade Expo.
+
+### Remaining validation gaps
+
+- Physical device/simulator verification remains: embedded YouTube player behavior, microphone recording, and timestamp accuracy. Runtime blockers: `xcrun simctl list devices booted` fails because `simctl` is unavailable, and `adb` is not installed.
+- Persistent recovery across backend restarts remains future work until the PostgreSQL layer replaces the current in-memory MVP services.
+- Real STT/search providers remain intentionally unconfigured because they require explicit API key/provider approval.

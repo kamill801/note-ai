@@ -684,7 +684,22 @@ Response:
 }
 ```
 
-### POST /api/notes/:id/research
+### Current MVP1 Local API Surface
+
+The local TypeScript backend currently exposes root-level routes rather than `/api/*` routes:
+
+- `GET /health`
+- `GET /sources`, `POST /sources`
+- `GET /transcripts?sourceId=...`, `POST /transcripts`
+- `GET /captures?sourceId=...`, `POST /captures`
+- `GET /segments?captureId=...`
+- `POST /voice-memos`
+- `GET /notes?captureId=...`, `GET /notes`, `POST /notes`
+- `GET /research-jobs?noteId=...`, `POST /research-jobs`
+
+`GET /notes` without a `captureId` returns the note library list for current local MVP startup hydration. In the current implementation this is process-local because the backend services still use in-memory maps; true recovery across backend restarts requires the PostgreSQL persistence layer.
+
+### POST /research-jobs
 
 Run follow-up research.
 
@@ -692,6 +707,7 @@ Request:
 
 ```json
 {
+  "noteId": "note_123",
   "request": "리텐션 루프와 온보딩 사례를 더 찾아줘"
 }
 ```
@@ -700,8 +716,10 @@ Response:
 
 ```json
 {
-  "jobId": "research_123",
-  "status": "pending"
+  "job": {
+    "id": "research_123",
+    "status": "succeeded"
+  }
 }
 ```
 
@@ -926,7 +944,7 @@ Do not log:
 App/runtime:
 
 - `APP_ENV`
-- `PUBLIC_API_BASE_URL`
+- `EXPO_PUBLIC_API_BASE_URL`
 
 Database:
 
@@ -1022,4 +1040,3 @@ Policy quality:
 - Final transcript provider needs production-safe validation.
 - First launch platform may be iOS-first or Android-first depending implementation resource.
 - Pricing is undecided.
-

@@ -23,7 +23,7 @@
     "react-native-webview": "13.16.1"
   },
   "devDependencies": {
-    "typescript": "^5.9.0"
+    "typescript": "~6.0.3"
   },
   "engines": {
     "node": ">=22.13.0"

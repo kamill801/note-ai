@@ -32,7 +32,8 @@ Tasks: Run Task
 Available tasks:
 
 - `OMX: Direct Workspace (Autonomous Local Dev)`
-- `OMX: Tmux Workspace (Autonomous Local Dev)`
+- `OMX: Direct Continue MVP1 (No Tmux)`
+- `OMX: Tmux Workspace (Optional, Copy-Unfriendly)`
 - `OMX: Start MVP1 Exec`
 - `OMX: Resume`
 - `OMX: Status`
@@ -44,6 +45,18 @@ Available tasks:
 - `Project: Git Status`
 
 ## OMX Workflow
+
+Prefer direct mode inside VS Code. It preserves normal terminal copy/select behavior better than tmux:
+
+```bash
+omx --direct --yolo
+```
+
+Continue the current MVP1 work without copying a long prompt:
+
+```bash
+omx --direct --yolo "$(cat docs/CODEX_CONTINUE_PROMPT.md)"
+```
 
 Interactive OMX session:
 
@@ -139,6 +152,14 @@ cp .env.example .env.local
 
 Never commit real secrets.
 
+Mobile API calls are configured through Expo's public environment variable:
+
+```bash
+EXPO_PUBLIC_API_BASE_URL=http://localhost:3000
+```
+
+Use `localhost` for iOS Simulator / same-machine smoke. For Android emulator or a physical device, set this to a backend URL reachable from that runtime, for example `http://10.0.2.2:3000` on the Android emulator or `http://<your-mac-lan-ip>:3000` on a device.
+
 ## Verification Expectations
 
 For each milestone, Codex should report:
@@ -188,9 +209,40 @@ For the current Expo Dev Client MVP1 vertical slice, run the backend before usin
 
 ```bash
 npm run dev:backend
-npm run dev:mobile
+EXPO_PUBLIC_API_BASE_URL=http://localhost:3000 npm run dev:mobile
 ```
 
-The mobile API client currently targets `http://localhost:3000`, matching the backend default. The `MVP1 테스트 영상으로 시작` button registers the sample YouTube video and imports a manual Korean transcript fixture so the capture-to-note path can be tested without paid APIs or real provider credentials.
+The mobile API client reads `EXPO_PUBLIC_API_BASE_URL` and falls back to `http://localhost:3000`, matching the backend default for same-machine development. The `MVP1 테스트 영상으로 시작` button registers the sample YouTube video and imports a manual Korean transcript fixture so the capture-to-note path can be tested without paid APIs or real provider credentials.
 
-On Android emulator or a physical device, replace the API base URL in `mobile/src/services/api.ts` with the reachable development host if `localhost` resolves to the device instead of the Mac.
+Current local backend state is process-local in memory. Restarting the backend clears registered sources, captures, notes, and research jobs until the PostgreSQL persistence layer is wired into the services.
+
+On Android emulator or a physical device, do not edit source code for the API host. Start Expo with a reachable public env value instead:
+
+```bash
+EXPO_PUBLIC_API_BASE_URL=http://10.0.2.2:3000 npm run dev:mobile
+EXPO_PUBLIC_API_BASE_URL=http://<your-mac-lan-ip>:3000 npm run dev:mobile
+```
+
+## Backend + Expo Dev Client Smoke
+
+Use this non-secret local smoke to start the real backend dev server and Expo Dev Client Metro, verify `/health`, and verify Metro's `/status` endpoint:
+
+```bash
+npm run smoke:dev-client
+```
+
+Optional overrides:
+
+```bash
+BACKEND_PORT=3000 EXPO_PORT=8081 EXPO_PUBLIC_API_BASE_URL=http://127.0.0.1:3000 npm run smoke:dev-client
+```
+
+Manual Dev Client screen smoke after the command passes:
+
+1. Open an installed Note AI Expo Dev Client build in iOS Simulator or Android emulator.
+2. Connect to the displayed `noteai://` / `exp+noteai://` development URL.
+3. Tap `가져오기` -> `MVP1 테스트 영상으로 시작`.
+4. Confirm the visible YouTube player appears, `듣기` is active, and `이 부분 저장` creates a timestamp capture.
+5. Add a memo on the capture screen, generate the Korean note, and confirm the `노트` tab shows the saved note, preserved memo, transcript evidence, and follow-up research.
+
+This smoke uses only local development servers and fixture/manual transcript data. It does not use paid APIs, real secrets, analytics SDKs, production deploys, or YouTube download/background playback behavior.
