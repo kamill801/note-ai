@@ -3,7 +3,7 @@
 ## Source of truth
 
 - Status: Active for MVP1 implementation
-- Last refreshed: 2026-06-15
+- Last refreshed: 2026-06-19
 - Design workflow used:
   - `$design` repo-local design contract workflow.
   - Product ideation workflow Stage 7: design decision lock before implementation.
@@ -102,6 +102,7 @@
 - Product-facing language:
   - Use `방금 저장`, `이 부분 저장`, `듣던 부분 저장`, `내 생각 말하기`, `노트로 정리됨`.
   - Avoid `캡처` in primary user-facing CTAs.
+  - For MVP1 voice-first mode, show `듣는 중` / `말로 저장 대기 중` rather than technical capture labels.
   - Technical docs may still use capture/session internally.
 - Core screens:
   1. `Welcome`
@@ -123,7 +124,8 @@
   - `영상 가져오기` -> `Import Video`.
   - `가져오기` -> `Source Processing`.
   - `지금 듣기` -> `Listen / Save`.
-  - `지금 저장` / `이 부분 저장` -> create exact timestamp save -> `Voice Memo`.
+  - `Note AI야 방금 저장...` spoken on `Listen / Save` -> create exact timestamp save -> preserve spoken memo -> `Note Processing`.
+  - `지금 저장` / `이 부분 저장` -> fallback exact timestamp save -> `Voice Memo`.
   - `말 끝났어요` -> `Note Processing`.
   - `메모 없이 저장` -> `Note Processing` with memo-empty state.
   - `관련 자료 찾기` -> `Research`.
@@ -212,25 +214,38 @@
 ### S06 Listen / Save
 
 - Purpose:
-  - MVP1's main exact-save screen.
+  - MVP1's main exact-save and voice command screen.
 - Required content:
   - Visible official YouTube player.
   - Source title.
   - Current playback time.
   - Exact save state: `정확 저장`.
-  - Primary CTA: `지금 저장` or `이 부분 저장`.
+  - Primary state panel: `말로 저장 대기 중`.
+  - Recognized command preview.
+  - Supported examples:
+    - `Note AI야 방금 저장해줘. 이건 온보딩 아이디어로 정리해줘.`
+    - `노트 에이야 이 부분 저장. 나중에 관련 자료도 찾아줘.`
+  - Fallback CTA: `이 부분 저장`.
   - Optional preview of latest memo/thought.
 - Rules:
   - Player must remain visible.
   - Do not hide player.
   - Do not imply background playback.
-  - Save button must be thumb-friendly and visually dominant.
+  - Voice state must be visually dominant.
+  - Save fallback button must be thumb-friendly and visually available.
+  - Avoid implying that the app listens outside this screen.
 - States:
   - Player loading.
   - Player ready.
-  - Save disabled until player time is known.
-  - Save active.
-  - Save success.
+  - Voice mode off.
+  - Permission needed.
+  - Listening for command.
+  - Recognized but ignored.
+  - Saving from voice command.
+  - Voice save success.
+  - Voice recognition failed.
+  - Fallback save disabled until player time is known.
+  - Fallback save active.
 
 ### S07 Voice Memo
 
@@ -242,6 +257,7 @@
   - Live transcript or interim text when available.
   - `말 끝났어요` CTA.
   - `메모 없이 저장` fallback.
+  - Voice-first mode may skip this screen when the command already contains a memo.
 - States:
   - Recording.
   - Paused.
@@ -414,7 +430,7 @@
   - Button: primary, secondary, destructive, disabled, loading.
   - Card: default, lime, blue, pink, amber, violet, error.
   - Source: ready, processing, transcript unavailable, failed.
-  - Save: disabled, ready, saving, saved.
+  - Save: disabled, ready, voice-listening, voice-recognized, voice-ignored, saving, saved.
   - Memo: idle, recording, transcribing, failed.
   - Note: generating, ready, failed.
   - Research: suggested, running, ready, failed, empty.

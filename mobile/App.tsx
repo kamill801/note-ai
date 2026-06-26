@@ -93,7 +93,7 @@ export default function App() {
           />
         ) : null}
         {tab === 'import' ? <ImportSourceScreen onSourceReady={handleSourceReady} /> : null}
-        {tab === 'player' ? <PlayerScreen source={selectedSource} onCaptureSaved={handleCaptureSaved} /> : null}
+        {tab === 'player' ? <PlayerScreen source={selectedSource} onCaptureSaved={handleCaptureSaved} onNoteReady={handleNoteReady} /> : null}
         {tab === 'capture' ? <CaptureModeScreen latestCapture={latestCapture} onNoteReady={handleNoteReady} /> : null}
         {tab === 'library' ? <NoteLibraryScreen latestNote={latestNote} onOpenNote={handleOpenNote} /> : null}
         {tab === 'noteDetail' ? <NoteDetailScreen note={latestNote} researchJob={latestResearchJob} onResearchReady={setLatestResearchJob} /> : null}
@@ -101,7 +101,7 @@ export default function App() {
       </View>
       <View style={styles.tabBar}>
         <TabButton active={tab === 'home'} label="홈" onPress={() => setTab('home')} />
-        <TabButton active={tab === 'import'} label="가져오기" onPress={() => setTab('import')} />
+        <TabButton active={tab === 'import'} label="등록" onPress={() => setTab('import')} />
         <TabButton active={tab === 'player'} label="듣기" onPress={() => setTab('player')} />
         <TabButton active={tab === 'library' || tab === 'noteDetail'} label="노트" onPress={() => setTab('library')} />
         <TabButton active={tab === 'settings'} label="설정" onPress={() => setTab('settings')} />

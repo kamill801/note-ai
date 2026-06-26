@@ -1,7 +1,7 @@
 # TECHSPEC: 이동 중 YouTube 지식 캡처 앱
 
 Status: Draft
-Last updated: 2026-06-14
+Last updated: 2026-06-19
 
 ## 0. Document Purpose
 
@@ -52,6 +52,16 @@ Must-have:
 - 한국어 노트 생성.
 - 추가 검색 키워드/자료 추천.
 - 추가 리서치 요청 처리.
+
+Decision lock for MVP1 voice UX:
+
+- The primary save interaction is voice-first while the app is foregrounded on the `Listen / Save` screen.
+- Manual save and text input remain as fallback only.
+- The app does not provide system-wide always-listening wake word behavior.
+- A valid command must include an app trigger phrase and a save intent in the same recognized utterance.
+- The same utterance can include the user memo/intention after the save command.
+- Example: `Note AI야 방금 부분 저장해줘. 이건 우리 앱 온보딩 아이디어로 정리해줘.`
+- On command success, the app creates the timestamp capture, saves the memo, and generates the Korean note without requiring additional taps.
 
 ### MVP2: YouTube App Linked Estimated Save Mode
 
@@ -110,6 +120,7 @@ Storage
 
 - React Native + Expo Dev Client.
 - `react-native-webview` for official YouTube iframe player surface.
+- `expo-speech-recognition` for foreground app-internal voice command recognition.
 - Native modules when needed:
   - iOS: App Intents / Shortcuts later.
   - Android: foreground capture mode later.
@@ -208,7 +219,50 @@ Rules:
 
 - Capture mode must show active state.
 - Trigger works only while app is open/capture mode active.
+- Trigger recognition runs on the `Listen / Save` screen and must not be presented as an OS-level wake word.
+- To reduce false saves from YouTube audio, a command is accepted only when a configured app trigger phrase and a save phrase are detected together.
+- Accepted trigger phrases for MVP1:
+  - `Note AI야`
+  - `노트 AI야`
+  - `노트 에이야`
+  - `에이야`
+- Accepted save phrases for MVP1:
+  - `방금 저장`
+  - `방금 부분 저장`
+  - `이 부분 저장`
+  - `듣던 부분 저장`
+- If recognized text contains text after the save phrase, that tail becomes the first-pass `memoTranscript`.
+- If no memo tail exists, create the capture and keep the user in a memo-needed state with manual fallback.
 - If trigger is not detected, user can manually tap capture.
+
+Priority: MVP.
+
+### 7.3.1 Voice Command Parser
+
+Purpose: convert foreground speech recognition text into a deterministic app action.
+
+Input:
+
+- recognized transcript string
+- trigger phrase list
+- save phrase list
+- current player state
+
+Output:
+
+- `action`: `save_moment | ignore`
+- `triggerTranscript`
+- `memoTranscript`
+- `matchedTrigger`
+- `matchedSavePhrase`
+
+Rules:
+
+- Normalize case, whitespace, punctuation, and common Korean/English variants before matching.
+- Do not call capture APIs when the player is not ready or no source is selected.
+- Do not send every recognized utterance to the backend; parse locally first.
+- Preserve the original recognized text as `triggerTranscript`.
+- If the memo tail is empty, use a clear UI state rather than inventing memo text.
 
 Priority: MVP.
 

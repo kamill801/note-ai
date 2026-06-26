@@ -10,6 +10,7 @@
     "ios": "expo run:ios",
     "android": "expo run:android",
     "check": "node scripts/validate-design-contract.mjs",
+    "test": "node --test tests/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -17,6 +18,7 @@
     "expo": "~56.0.0",
     "expo-audio": "~56.0.12",
     "expo-dev-client": "~56.0.20",
+    "expo-speech-recognition": "^56.0.1",
     "expo-status-bar": "~56.0.4",
     "react": "19.2.3",
     "react-native": "0.85.x",
@@ -27,5 +29,6 @@
   },
   "engines": {
     "node": ">=22.13.0"
-  }
+  },
+  "type": "module"
 }

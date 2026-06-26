@@ -1,7 +1,7 @@
 # PLAN: 이동 중 YouTube 지식 캡처 앱
 
 Status: Draft
-Last updated: 2026-06-15
+Last updated: 2026-06-19
 
 ## Current Goal
 
@@ -15,6 +15,8 @@ Last updated: 2026-06-15
 - YouTube를 대체하지 않는다.
 - 시스템 전체 always-listening은 하지 않는다.
 - 음성 트리거는 앱 foreground/capture mode 안에서만 동작한다.
+- MVP1 primary interaction은 버튼이 아니라 `듣기` 화면의 foreground voice command이다.
+- 수동 버튼과 텍스트 입력은 음성 인식 실패/권한 거부/소음 환경을 위한 fallback이다.
 - TECHSPEC에는 구현 순서를 넣지 않고, 이 파일에서만 관리한다.
 
 ## Pre-Implementation Gate: Design Decision Lock
@@ -88,6 +90,21 @@ Acceptance:
 - 트리거 문구 또는 수동 버튼으로 capture가 시작된다.
 - 추가 음성 메모가 녹음/전사된다.
 - 사용자의 메모 텍스트가 누락 없이 저장된다.
+
+### Milestone 3A: Voice-First Save Command
+
+목표: 사용자가 `듣기` 화면에서 영상 재생 중 앱 이름과 저장 명령을 말하면 버튼 없이 timestamp 저장, 메모 저장, 노트 생성을 수행한다.
+
+Acceptance:
+
+- `expo-speech-recognition` 기반 foreground speech recognition이 Dev Client에서 동작한다.
+- 앱이 열린 상태의 `듣기` 화면에서만 음성 명령을 듣는다.
+- 마이크/음성 인식 권한 요청 문구가 명확하다.
+- `Note AI야`, `노트 AI야`, `노트 에이야`, `에이야` 중 하나와 `방금 저장`, `방금 부분 저장`, `이 부분 저장`, `듣던 부분 저장` 중 하나가 같은 발화에 있을 때만 저장한다.
+- 인식 문장의 저장 명령 뒤쪽 텍스트를 사용자 메모로 보존한다.
+- 명령 성공 시 현재 player timestamp로 `POST /captures`, memo가 있으면 `POST /voice-memos`, 이후 `POST /notes`까지 자동 실행한다.
+- 음성 인식 실패, 권한 거부, 플레이어 준비 전 상태에서는 기존 수동 버튼/텍스트 입력 fallback을 제공한다.
+- YouTube 플레이어는 계속 화면에 보이고, 백그라운드/숨김 재생을 제공하지 않는다.
 
 ### Milestone 4: Transcript and Segment Selection
 
@@ -199,6 +216,21 @@ Acceptance:
   - Files likely affected: `backend/src/ai/speech-to-text.ts`
   - Acceptance: memo transcript saved.
   - Test: fixture audio.
+
+- TODO: foreground voice command dependency and permissions.
+  - Files likely affected: `mobile/package.json`, `mobile/app.json`, `mobile/ios/`
+  - Acceptance: Dev Client includes speech recognition native module and iOS permission copy.
+  - Test: `npm --workspace mobile exec -- expo config --type public`, iOS simulator smoke.
+
+- TODO: voice command parser.
+  - Files likely affected: `mobile/src/services/voice-command.ts`
+  - Acceptance: app trigger + save phrase parse to `save_moment`; unrelated speech ignored.
+  - Test: unit or focused TypeScript-level parser checks.
+
+- TODO: voice-first listen screen.
+  - Files likely affected: `mobile/src/screens/PlayerScreen.tsx`
+  - Acceptance: while voice mode is on, recognized command creates capture, memo, and note without extra taps.
+  - Test: simulator/dev-client manual voice command smoke; fallback button still works.
 
 ### Transcript and AI
 

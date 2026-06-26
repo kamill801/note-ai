@@ -11,7 +11,8 @@
       "supportsTablet": false,
       "bundleIdentifier": "app.noteai.mobile",
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "Note AI는 사용자가 말한 저장 이유와 생각을 노트에 보존하기 위해 마이크 권한을 요청합니다."
+        "NSMicrophoneUsageDescription": "Note AI는 사용자가 말한 저장 이유와 생각을 노트에 보존하기 위해 마이크 권한을 요청합니다.",
+        "NSSpeechRecognitionUsageDescription": "Note AI는 사용자의 저장 명령과 메모를 텍스트로 인식하기 위해 음성 인식 권한을 요청합니다."
       }
     },
     "android": {
@@ -21,7 +22,7 @@
       ]
     },
     "extra": {
-      "apiBaseUrl": "http://localhost:3000"
+      "apiBaseUrl": "http://127.0.0.1:3000"
     },
     "plugins": [
       "expo-status-bar",
@@ -32,6 +33,16 @@
           "enableBackgroundPlayback": false,
           "enableBackgroundRecording": false,
           "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Note AI는 사용자가 말한 저장 이유와 생각을 노트에 보존하기 위해 마이크 권한을 요청합니다.",
+          "speechRecognitionPermission": "Note AI는 사용자의 저장 명령과 메모를 텍스트로 인식하기 위해 음성 인식 권한을 요청합니다.",
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
         }
       ]
     ]

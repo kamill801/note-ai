@@ -17,11 +17,16 @@ process.on('SIGTERM', () => {
 });
 
 try {
-  console.log(`dev-client smoke: starting backend dev server on port ${backendPort}`);
-  const backend = spawnManaged('npm', ['--workspace', 'backend', 'run', 'dev'], {
-    APP_ENV: 'development',
-    PORT: String(backendPort),
-  });
+  const backendAlreadyRunning = await isBackendHealthy(`${apiBaseUrl}/health`);
+  if (backendAlreadyRunning) {
+    console.log(`dev-client smoke: reusing existing backend dev server on port ${backendPort}`);
+  } else {
+    console.log(`dev-client smoke: starting backend dev server on port ${backendPort}`);
+    spawnManaged('npm', ['--workspace', 'backend', 'run', 'dev'], {
+      APP_ENV: 'development',
+      PORT: String(backendPort),
+    });
+  }
 
   await waitForHttp(`${apiBaseUrl}/health`, async (response) => {
     if (!response.ok) return false;
@@ -30,20 +35,26 @@ try {
   }, 45_000);
   console.log(`dev-client smoke: backend health passed at ${apiBaseUrl}/health`);
 
-  console.log(`dev-client smoke: starting Expo Dev Client Metro on port ${expoPort}`);
-  const expo = spawnManaged('npm', ['--workspace', 'mobile', 'run', 'dev', '--', `--${expoHost}`, '--port', String(expoPort)], {
-    CI: '1',
-    EXPO_NO_TELEMETRY: '1',
-    EXPO_PUBLIC_API_BASE_URL: apiBaseUrl,
-  });
+  const metroAlreadyRunning = await isMetroRunning(expoStatusUrl);
+  if (metroAlreadyRunning) {
+    console.log(`dev-client smoke: reusing existing Expo Dev Client Metro on port ${expoPort}`);
+  } else {
+    console.log(`dev-client smoke: starting Expo Dev Client Metro on port ${expoPort}`);
+    const expo = spawnManaged('npm', ['--workspace', 'mobile', 'run', 'dev', '--', `--${expoHost}`, '--port', String(expoPort)], {
+      CI: '1',
+      EXPO_NO_TELEMETRY: '1',
+      EXPO_PUBLIC_API_BASE_URL: apiBaseUrl,
+    });
 
-  await waitForOutput(expo, /Metro waiting on|Waiting on|Development server running|exp\+noteai/, 90_000);
+    await waitForOutput(expo, /Metro waiting on|Waiting on|Development server running|exp\+noteai/, 90_000);
+  }
   await waitForHttp(expoStatusUrl, async (response) => {
     const body = await response.text();
     return response.ok && body.includes('packager-status:running');
   }, 30_000);
 
-  console.log('dev-client smoke passed: backend dev server and Expo Dev Client Metro are running.');
+  await requestMetroReload(expoPort);
+  console.log('dev-client smoke passed: backend dev server and Expo Dev Client Metro are running; reload requested when supported.');
   console.log(`dev-client smoke used EXPO_PUBLIC_API_BASE_URL=${apiBaseUrl}`);
   console.log('Open an installed Note AI dev build in iOS Simulator/Android emulator and connect to the displayed dev-client URL for manual screen smoke.');
   await cleanup(0);
@@ -125,6 +136,36 @@ async function waitForOutput(child, pattern, timeoutMs) {
     child.stderr.on('data', onData);
     child.on('exit', onExit);
   });
+}
+
+async function isBackendHealthy(url) {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return false;
+    const payload = await response.json();
+    return payload.status === 'ok';
+  } catch {
+    return false;
+  }
+}
+
+async function isMetroRunning(url) {
+  try {
+    const response = await fetch(url);
+    const body = await response.text();
+    return response.ok && body.includes('packager-status:running');
+  } catch {
+    return false;
+  }
+}
+
+async function requestMetroReload(port) {
+  try {
+    const response = await fetch(`http://localhost:${port}/reload`);
+    console.log(`dev-client smoke: Metro reload requested (${response.status})`);
+  } catch (error) {
+    console.log(`dev-client smoke: Metro reload request skipped (${error instanceof Error ? error.message : 'unknown error'})`);
+  }
 }
 
 async function waitForHttp(url, predicate, timeoutMs) {
