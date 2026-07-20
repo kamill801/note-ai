@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { readJsonBody, writeJson } from '../http/json.ts';
-import { createExactCapture, listCaptures } from '../services/capture-service.ts';
+import { createExactCapture, listCaptures, type CaptureTrigger } from '../services/capture-service.ts';
 
 export async function handleCaptures(request: IncomingMessage, response: ServerResponse): Promise<void> {
   const url = new URL(request.url ?? '/', 'http://localhost');
@@ -39,14 +39,18 @@ export async function handleCaptures(request: IncomingMessage, response: ServerR
   });
 }
 
-function isCreateCaptureBody(value: unknown): value is { sourceId: string; capturedAtSec: number; trigger?: 'manual_button' | 'voice_trigger'; triggerTranscript?: string } {
+function isCreateCaptureBody(value: unknown): value is { sourceId: string; capturedAtSec: number; trigger?: CaptureTrigger; triggerTranscript?: string } {
   if (typeof value !== 'object' || value === null) return false;
   const record = value as Record<string, unknown>;
   const trigger = record.trigger;
   return (
     typeof record.sourceId === 'string' &&
     typeof record.capturedAtSec === 'number' &&
-    (trigger === undefined || trigger === 'manual_button' || trigger === 'voice_trigger') &&
+    (trigger === undefined || isCaptureTrigger(trigger)) &&
     (record.triggerTranscript === undefined || typeof record.triggerTranscript === 'string')
   );
+}
+
+function isCaptureTrigger(value: unknown): value is CaptureTrigger {
+  return value === 'manual_button' || value === 'voice_trigger' || value === 'siri_shortcut';
 }

@@ -1,12 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import { getSourceById } from './source-service.ts';
 
+export type CaptureTrigger = 'manual_button' | 'voice_trigger' | 'siri_shortcut';
+
 export type CaptureRecord = {
   id: string;
   sourceId: string;
   mode: 'in_app_exact';
   capturedAtSec: number;
-  trigger: 'manual_button' | 'voice_trigger';
+  trigger: CaptureTrigger;
   triggerTranscript?: string;
   createdAt: string;
 };
@@ -14,7 +16,7 @@ export type CaptureRecord = {
 export type CreateExactCaptureInput = {
   sourceId: string;
   capturedAtSec: number;
-  trigger?: 'manual_button' | 'voice_trigger';
+  trigger?: CaptureTrigger;
   triggerTranscript?: string;
 };
 

@@ -1,7 +1,7 @@
 # PRD: 이동 중 YouTube 지식 캡처 앱
 
 Status: Draft
-Last updated: 2026-06-14
+Last updated: 2026-07-04
 
 ## 1. Product Goal
 
@@ -52,25 +52,26 @@ Last updated: 2026-06-14
 
 ## 5. MVP Strategy
 
-### MVP1: 앱 내 재생 기반 정확 저장
+### MVP1: Siri/App Shortcut 기반 핸즈프리 정확 저장
 
-기능 검증용 1차 MVP는 사용자가 YouTube 영상을 우리 앱에 등록하고, 앱 안의 공식 YouTube 플레이어로 재생하는 방식이다.
+기능 검증용 1차 MVP는 사용자가 YouTube 영상을 우리 앱에 등록하고, 앱 안의 공식 YouTube 플레이어로 재생한 뒤, 손을 쓰지 못하는 상황에서는 Siri/App Shortcut으로 "방금 저장" 액션을 실행하는 방식이다.
 
 이유:
 
 - 현재 재생 초를 정확히 알 수 있다.
 - timestamp 기반 캡처가 안정적으로 동작한다.
-- 음성 메모, 구간 요약, 노트 생성, 리서치까지 전체 파이프라인을 검증하기 쉽다.
+- iOS 정책과 오디오 세션 현실 안에서 핸즈프리 저장을 가장 안정적으로 제공할 수 있다.
+- 호출 이후 음성 메모, 구간 요약, 노트 생성, 리서치까지 전체 파이프라인을 검증하기 쉽다.
 - "기능적으로 정상작동하는 MVP" 기준에 맞다.
 
 핵심 흐름:
 
 1. 사용자가 YouTube 링크를 앱에 등록한다.
 2. 앱 내 YouTube 플레이어에서 영상을 재생한다.
-3. 사용자가 캡처 모드를 켠다.
-4. 영상 재생 중 앱 내부 트리거로 "방금 저장"을 말한다.
-5. 앱이 현재 timestamp를 저장한다.
-6. 사용자가 추가 음성 메모를 말한다.
+3. 이동/운동/운전 중 중요한 순간이 나오면 사용자가 "Siri야, Note AI에 방금 저장"을 말한다.
+4. Siri/App Shortcut이 Note AI의 저장 액션을 실행하고 앱을 연다.
+5. 앱이 현재 YouTube 플레이어를 일시정지하고 timestamp를 고정한다.
+6. 앱이 사용자에게 추가 음성 메모/의도를 말하게 한다.
 7. 앱이 timestamp 앞뒤 transcript를 요약한다.
 8. 앱이 사용자 메모 의도를 반영한 한국어 노트를 만든다.
 9. 앱이 추가 검색 키워드와 자료를 추천한다.
@@ -113,21 +114,27 @@ Required:
 
 ### 6.3 Capture Mode
 
-사용자는 앱 내에서 캡처 모드를 켤 수 있다.
+사용자는 손을 쓰지 못하는 상황에서 Siri/App Shortcut으로 현재 구간 저장을 시작할 수 있고, 앱 안에서는 큰 fallback 버튼으로 같은 동작을 실행할 수 있다.
 
 Required:
 
-- 마이크 권한 요청.
-- 캡처 모드 상태 표시.
-- 앱 내부 트리거 문구 감지.
-- 트리거 감지 시 timestamp 저장.
+- Siri/App Shortcut 액션 등록.
+- 액션 실행 시 앱 열기 또는 foreground 복귀.
+- 액션 실행 상태 표시.
+- 액션 실행 시 플레이어 pause 요청.
+- pause 요청 시점의 timestamp 저장.
 - 추가 메모 녹음 시작/종료.
 
 MVP trigger examples:
 
+- "Siri야, Note AI에 방금 저장."
+- "Siri야, Note AI로 이 부분 저장."
+- 앱 내 fallback: "이 부분 저장" 버튼.
+
+Experimental only:
+
 - "[앱이름]아 방금 저장."
-- "방금 내용 메모해줘."
-- "이거 아이디어로 저장."
+- "노트AI야 방금 내용 메모해줘."
 
 ### 6.4 Voice Memo Recognition
 
@@ -200,7 +207,8 @@ MVP 성공 기준은 초기에는 시장 지표가 아니라 기능적 완성도
 
 - YouTube 링크 등록이 안정적으로 된다.
 - 앱 내 플레이어가 재생되고 현재 시간이 기록된다.
-- 캡처 모드에서 트리거가 정상 인식된다.
+- Siri/App Shortcut 또는 앱 내 fallback으로 저장 액션이 정상 실행된다.
+- 저장 액션 실행 시 플레이어가 멈추고 timestamp가 고정된다.
 - 음성 메모가 누락 없이 텍스트화된다.
 - 저장 시점 주변 transcript가 정확히 선택된다.
 - 한국어 노트가 의도에 맞게 생성된다.
@@ -227,7 +235,7 @@ MVP 성공 기준은 초기에는 시장 지표가 아니라 기능적 완성도
 
 ### Voice Trigger Reliability Risk
 
-MVP1의 앱 이름 호출은 시스템 전체 wake word가 아니라 앱이 foreground/capture mode일 때의 내부 트리거다.
+MVP1의 핵심 핸즈프리 트리거는 iOS가 공식 지원하는 Siri/App Shortcut 액션이다. 앱 이름을 직접 부르는 foreground wake word는 실험 기능이며, YouTube 재생 중 항상 안정적으로 동작한다고 약속하지 않는다.
 
 ### User Habit Risk
 
@@ -239,4 +247,3 @@ MVP1의 앱 이름 호출은 시스템 전체 wake word가 아니라 앱이 fore
 - transcript provider의 production-safe 방식은 추가 정책/법무 검토가 필요하다.
 - 무료/유료 과금 기준은 미정.
 - iOS와 Android 중 첫 출시 플랫폼은 구현 단계에서 리소스 기준으로 확정한다.
-

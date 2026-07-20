@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { colors, spacing } from './src/design/tokens';
 import type { NoteRecord, ResearchJob, SourceSummary, TimestampCapture } from './src/domain/source';
@@ -11,6 +11,16 @@ import { NoteDetailScreen } from './src/screens/NoteDetailScreen';
 import { NoteLibraryScreen } from './src/screens/NoteLibraryScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { listNotes, listSources } from './src/services/api';
+import {
+  createShortcutActionGate,
+  parseShortcutAction,
+  type CaptureNowShortcutAction,
+} from './src/services/shortcut-action';
+import {
+  clearPendingCaptureRequest,
+  readPendingCaptureRequest,
+} from './src/services/pending-capture-native';
+import { pendingRequestToShortcutAction } from './src/services/pending-capture-request';
 
 type Tab = 'home' | 'import' | 'player' | 'capture' | 'library' | 'noteDetail' | 'settings';
 
@@ -21,8 +31,35 @@ export default function App() {
   const [latestCapture, setLatestCapture] = useState<TimestampCapture | null>(null);
   const [latestNote, setLatestNote] = useState<NoteRecord | null>(null);
   const [latestResearchJob, setLatestResearchJob] = useState<ResearchJob | null>(null);
+  const [pendingShortcutAction, setPendingShortcutAction] = useState<CaptureNowShortcutAction | null>(null);
   const [hydrating, setHydrating] = useState(true);
   const [startupError, setStartupError] = useState<string | null>(null);
+  const shortcutActionGateRef = useRef(createShortcutActionGate({ dedupeWindowMs: 1500 }));
+
+  const handleShortcutUrl = useCallback((url: string) => {
+    const action = parseShortcutAction(url);
+    if (action.action !== 'capture_now') return;
+    if (!shortcutActionGateRef.current.shouldAccept(action)) return;
+    setPendingShortcutAction(action);
+    setTab('player');
+  }, []);
+
+  const handleShortcutActionHandled = useCallback(() => {
+    const handledActionId = pendingShortcutAction?.id;
+    if (handledActionId) {
+      void clearPendingCaptureRequest(handledActionId);
+    }
+    setPendingShortcutAction(null);
+  }, [pendingShortcutAction?.id]);
+
+  const handleNativePendingRequest = useCallback(async () => {
+    const request = await readPendingCaptureRequest();
+    if (!request) return;
+    const action = pendingRequestToShortcutAction(request);
+    if (!shortcutActionGateRef.current.shouldAccept(action)) return;
+    setPendingShortcutAction(action);
+    setTab('player');
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -48,6 +85,42 @@ export default function App() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    Linking.getInitialURL()
+      .then((url) => {
+        if (!active || url === null) return;
+        handleShortcutUrl(url);
+      })
+      .catch((caught: unknown) => {
+        const message = caught instanceof Error ? caught.message : 'Shortcut URL을 확인할 수 없습니다.';
+        setStartupError(message);
+      });
+
+    const subscription = Linking.addEventListener('url', (event) => {
+      handleShortcutUrl(event.url);
+    });
+
+    return () => {
+      active = false;
+      subscription.remove();
+    };
+  }, [handleShortcutUrl]);
+
+  useEffect(() => {
+    void handleNativePendingRequest();
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        void handleNativePendingRequest();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [handleNativePendingRequest]);
 
   function handleSourceReady(source: SourceSummary) {
     setSelectedSource(source);
@@ -93,7 +166,15 @@ export default function App() {
           />
         ) : null}
         {tab === 'import' ? <ImportSourceScreen onSourceReady={handleSourceReady} /> : null}
-        {tab === 'player' ? <PlayerScreen source={selectedSource} onCaptureSaved={handleCaptureSaved} onNoteReady={handleNoteReady} /> : null}
+        {tab === 'player' ? (
+          <PlayerScreen
+            source={selectedSource}
+            shortcutAction={pendingShortcutAction}
+            onCaptureSaved={handleCaptureSaved}
+            onNoteReady={handleNoteReady}
+            onShortcutActionHandled={handleShortcutActionHandled}
+          />
+        ) : null}
         {tab === 'capture' ? <CaptureModeScreen latestCapture={latestCapture} onNoteReady={handleNoteReady} /> : null}
         {tab === 'library' ? <NoteLibraryScreen latestNote={latestNote} onOpenNote={handleOpenNote} /> : null}
         {tab === 'noteDetail' ? <NoteDetailScreen note={latestNote} researchJob={latestResearchJob} onResearchReady={setLatestResearchJob} /> : null}

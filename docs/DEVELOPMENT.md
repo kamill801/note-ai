@@ -246,3 +246,39 @@ Manual Dev Client screen smoke after the command passes:
 5. Add a memo on the capture screen, generate the Korean note, and confirm the `노트` tab shows the saved note, preserved memo, transcript evidence, and follow-up research.
 
 This smoke uses only local development servers and fixture/manual transcript data. It does not use paid APIs, real secrets, analytics SDKs, production deploys, or YouTube download/background playback behavior.
+
+## iPhone Siri / App Shortcuts Capture Smoke
+
+The production hands-free MVP path is built into the app through iOS App Intents and App Shortcuts. Users should not have to create a manual Shortcut in the Shortcuts app.
+
+On a physical iPhone with the latest Note AI Dev Client installed:
+
+1. Rebuild/reinstall the iOS app after native changes:
+
+```bash
+cd mobile
+npx expo run:ios --device
+```
+
+2. Start backend and Metro with a Mac LAN or USB link-local API URL, for example:
+
+```bash
+EXPO_PUBLIC_API_BASE_URL=http://<your-mac-lan-ip>:3000 npm run dev:mobile
+```
+
+3. In Note AI, register a video and play it on the `듣기` screen.
+4. Say one of the built-in App Shortcut phrases:
+   - `Siri야, Note AI에 방금 저장해줘`
+   - `Siri야, Note AI에 방금 요약해줘`
+   - `Siri야, Note AI에 방금 조사해줘`
+   - `Siri야, Note AI에 방금 들은 부분 정리해줘`
+5. If Siri asks what to record, answer with the memo/intent, for example `방금 내용 요약하고 내 아이디어도 붙여줘`.
+6. Expected result: Note AI foregrounds, pauses the visible player, freezes the current timestamp, reads the native `PendingCaptureRequest`, saves the capture with trigger `siri_shortcut`, attaches the Siri memo, generates a Korean note, and creates research when the memo asks for research.
+
+This path still requires the app to use the visible in-app YouTube player. It does not read the official YouTube app's playback state and does not run a custom always-listening wake word in the background.
+
+The URL fallback below is development-only and should not be presented as the product setup:
+
+```text
+noteai://shortcut/capture-now
+```

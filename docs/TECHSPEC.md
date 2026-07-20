@@ -1,7 +1,7 @@
 # TECHSPEC: 이동 중 YouTube 지식 캡처 앱
 
 Status: Draft
-Last updated: 2026-06-19
+Last updated: 2026-07-04
 
 ## 0. Document Purpose
 
@@ -14,7 +14,7 @@ Last updated: 2026-06-19
 - Product placeholder: Note AI
 - Category: mobile knowledge capture app
 - One-line definition: 이동 중 YouTube 영상을 보거나 들을 때 중요한 순간과 사용자 음성 메모를 저장하고, AI가 해당 구간을 한국어 지식 노트와 추가 리서치로 정리하는 앱.
-- Primary MVP: 앱 내 재생 기반 정확 저장.
+- Primary MVP: 앱 내 재생 + Siri/App Shortcut 기반 핸즈프리 정확 저장.
 - Secondary mode: YouTube 앱 연동형 추정 저장.
 
 ## 2. Product Principles
@@ -36,31 +36,33 @@ Last updated: 2026-06-19
 
 ## 3. MVP Scope
 
-### MVP1: In-App Exact Save Mode
+### MVP1: Siri/App Shortcut Exact Save Mode
 
-사용자가 YouTube 링크를 앱에 등록하고, 앱 안의 공식 YouTube 플레이어로 재생한다. 앱은 현재 재생 시간을 읽고, 사용자의 음성 트리거와 메모를 받아 정확 timestamp 기반 노트를 생성한다.
+사용자가 YouTube 링크를 앱에 등록하고, 앱 안의 공식 YouTube 플레이어로 재생한다. 손을 쓰기 어려운 상황에서는 Siri/App Shortcut 액션이 앱을 열고 저장 요청을 전달한다. 앱은 현재 재생 시간을 읽고, 플레이어를 멈춘 뒤, 사용자의 음성 메모/의도를 받아 정확 timestamp 기반 노트를 생성한다.
 
 Must-have:
 
 - YouTube 링크 등록.
 - YouTube 임베드 플레이어.
 - 현재 재생 시간 읽기.
-- 앱 내부 캡처 모드.
-- 음성 트리거 인식.
+- Siri/App Shortcut 저장 액션.
+- 앱 내부 fallback 저장 버튼.
 - 음성 메모 녹음/전사.
 - timestamp 주변 transcript 구간 선택.
 - 한국어 노트 생성.
 - 추가 검색 키워드/자료 추천.
 - 추가 리서치 요청 처리.
 
-Decision lock for MVP1 voice UX:
+Decision lock for MVP1 hands-free UX:
 
-- The primary save interaction is voice-first while the app is foregrounded on the `Listen / Save` screen.
-- Manual save and text input remain as fallback only.
+- The primary hands-free save interaction is `Siri/App Shortcut -> Note AI save current moment`.
+- The app must open or foreground through the shortcut and deliver a local `capture_now` action into the React Native app.
+- The app must pause the visible YouTube player before collecting the user's memo.
+- Manual save and text input remain fallback only.
 - The app does not provide system-wide always-listening wake word behavior.
-- A valid command must include an app trigger phrase and a save intent in the same recognized utterance.
-- The same utterance can include the user memo/intention after the save command.
-- Example: `Note AI야 방금 부분 저장해줘. 이건 우리 앱 온보딩 아이디어로 정리해줘.`
+- Foreground custom wake word such as `노트AI야` is experimental, not MVP-critical.
+- A shortcut action can start with only the save intent; the user memo is collected after pause.
+- Example shortcut phrase: `Siri야, Note AI에 방금 저장.`
 - On command success, the app creates the timestamp capture, saves the memo, and generates the Korean note without requiring additional taps.
 
 ### MVP2: YouTube App Linked Estimated Save Mode
@@ -80,6 +82,7 @@ Must-have later:
 | --- | --- | --- | --- | --- |
 | YouTube URL | video identity | Required | Required | `videoId` extraction required |
 | YouTube embedded player state | exact timestamp | Required | Not available | only in app player mode |
+| Siri/App Shortcut action | hands-free trigger | Required | Optional | does not provide YouTube app state |
 | User voice memo | intent and context | Required | Required | speech-to-text |
 | Transcript segments | source evidence | Required for best output | Required | provider abstraction needed |
 | Web search results | follow-up research | Optional | Optional | source URLs required |
@@ -91,6 +94,7 @@ Must-have later:
 Mobile App
   - YouTube link registration
   - In-app YouTube player
+  - Siri/App Shortcut action bridge
   - Capture mode and microphone UI
   - Note library
 
@@ -120,9 +124,11 @@ Storage
 
 - React Native + Expo Dev Client.
 - `react-native-webview` for official YouTube iframe player surface.
-- `expo-speech-recognition` for foreground app-internal voice command recognition.
+- iOS App Intents / App Shortcuts for the MVP hands-free trigger.
+- Deep link or native event bridge to deliver shortcut actions into React Native.
+- `expo-speech-recognition` or provider-backed STT for post-trigger user memo transcription.
 - Native modules when needed:
-  - iOS: App Intents / Shortcuts later.
+  - iOS: App Intents / Shortcuts in MVP1.
   - Android: foreground capture mode later.
 
 Rationale:
@@ -197,14 +203,14 @@ Rules:
 
 Priority: MVP.
 
-### 7.3 Capture Mode
+### 7.3 Siri/App Shortcut Capture Trigger
 
-Purpose: enable app-internal voice trigger while video is playing.
+Purpose: enable hands-free exact save while video is playing in the Note AI app.
 
 Inputs:
 
-- microphone permission
-- trigger phrase configuration
+- Siri/App Shortcut invocation
+- current active app source
 - current `sourceId`
 - player `currentTimeSec`
 
@@ -217,27 +223,58 @@ Outputs:
 
 Rules:
 
-- Capture mode must show active state.
-- Trigger works only while app is open/capture mode active.
-- Trigger recognition runs on the `Listen / Save` screen and must not be presented as an OS-level wake word.
-- To reduce false saves from YouTube audio, a command is accepted only when a configured app trigger phrase and a save phrase are detected together.
-- Accepted trigger phrases for MVP1:
-  - `Note AI야`
-  - `노트 AI야`
-  - `노트 에이야`
-  - `에이야`
-- Accepted save phrases for MVP1:
-  - `방금 저장`
-  - `방금 부분 저장`
-  - `이 부분 저장`
-  - `듣던 부분 저장`
-- If recognized text contains text after the save phrase, that tail becomes the first-pass `memoTranscript`.
-- If no memo tail exists, create the capture and keep the user in a memo-needed state with manual fallback.
-- If trigger is not detected, user can manually tap capture.
+- The action must be exposed through iOS App Intents/App Shortcuts.
+- The action must open or foreground the app when run.
+- The production action payload is a native `PendingCaptureRequest` written by `CaptureCurrentSegmentIntent`.
+- `noteai://shortcut/capture-now` remains a development fallback only; it is not the product source of truth for Siri memo data.
+- The app only promises exact timestamp if a source is selected and the in-app YouTube player has a ready state.
+- On action receipt, the app requests `pauseVideo`, snapshots `currentTimeSec`, creates a capture, then starts memo capture.
+- If the player is not ready, the app shows a recoverable state and does not invent a timestamp.
+- If no active source exists, the app opens the import/home path.
+- The action must not imply access to the official YouTube app's playback state.
+- The app-internal `노트AI야` wake word remains an experimental feature behind a setting.
 
 Priority: MVP.
 
-### 7.3.1 Voice Command Parser
+### 7.3.1 Shortcut Action Router
+
+Purpose: convert OS/native/deep-link shortcut invocations into deterministic in-app actions.
+
+Input:
+
+- Native `PendingCaptureRequest`
+- Development-only URL payload
+- current app route
+- current source/player readiness
+
+Output:
+
+- `action`: `capture_now | none`
+- `source`: `siri_app_intent | siri_shortcut | deeplink | manual_button`
+- optional `memoTranscript`
+- optional `receivedAt`
+
+Rules:
+
+- Parse native and external action payloads at the boundary.
+- In production, Siri/App Shortcuts must be exposed through iOS `AppIntent` + `AppShortcutsProvider`; users must not have to create a manual Shortcut.
+- `CaptureCurrentSegmentIntent` stores `id`, `action`, `memo`, `source`, and `createdAt` in native pending storage, opens/foregrounds the app, and lets React Native process the request.
+- React Native reads and clears the pending request through the native bridge after it is accepted.
+- Do not call capture APIs before the player is ready.
+- Queue one pending `capture_now` action if the app opens before the player mounts.
+- Deduplicate repeated shortcut invocations within a short window.
+- Preserve a diagnostic timeline for manual QA:
+  - `shortcut_received`
+  - `player_pause_requested`
+  - `timestamp_captured`
+  - `memo_recording_started`
+  - `memo_transcribed`
+  - `note_created`
+  - `resume_requested`
+
+Priority: MVP.
+
+### 7.3.2 Voice Command Parser
 
 Purpose: convert foreground speech recognition text into a deterministic app action.
 

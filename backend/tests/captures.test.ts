@@ -59,6 +59,39 @@ test('POST /captures creates manual timestamp capture', async () => {
   }
 });
 
+test('POST /captures creates Siri shortcut timestamp capture', async () => {
+  resetSourcesForTest();
+  resetCapturesForTest();
+  const source = registerSource({ url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' });
+  const server = createServer();
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const address = server.address();
+  assertAddressInfo(address);
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+
+  try {
+    const createResponse = await fetch(`${baseUrl}/captures`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        sourceId: source.id,
+        capturedAtSec: 81.7,
+        trigger: 'siri_shortcut',
+        triggerTranscript: 'Siri/App Shortcut: 방금 저장',
+      }),
+    });
+    const createPayload = await createResponse.json();
+
+    assert.equal(createResponse.status, 201);
+    assert.equal(createPayload.capture.trigger, 'siri_shortcut');
+    assert.equal(createPayload.capture.triggerTranscript, 'Siri/App Shortcut: 방금 저장');
+    assert.equal(createPayload.capture.capturedAtSec, 81.7);
+  } finally {
+    server.close();
+  }
+});
+
 function assertAddressInfo(address: ReturnType<typeof import('node:http').Server.prototype.address>): asserts address is AddressInfo {
   assert.notEqual(address, null);
   assert.notEqual(typeof address, 'string');

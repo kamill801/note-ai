@@ -32,7 +32,7 @@ export type TimestampCapture = {
   sourceId: string;
   mode?: 'in_app_exact';
   capturedAtSec: number;
-  trigger?: 'manual_button' | 'voice_trigger';
+  trigger?: 'manual_button' | 'voice_trigger' | 'siri_shortcut';
   triggerTranscript?: string;
   createdAt: string;
 };

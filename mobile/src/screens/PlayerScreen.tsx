@@ -11,17 +11,30 @@ import { YouTubePlayerView, type YouTubePlayerHandle, type YouTubePlayerState } 
 import { borders, colors, radii, shadows, spacing, typography } from '../design/tokens';
 import type { NoteRecord, SourceSummary, TimestampCapture } from '../domain/source';
 import { createExactCapture, createResearchJob, createVoiceMemo, generateNote } from '../services/api';
-import { parseVoiceCommand, parseWakeWord, type SaveVoiceCommand, type VoiceCommandParseResult, type WakeVoiceCommand } from '../services/voice-command';
+import type { CaptureNowShortcutAction } from '../services/shortcut-action';
+import {
+  decideSpeechRecognitionRecovery,
+  decideWakeActivationFromSpeechResult,
+  createSaveVoiceCommandFromSiriMemo,
+  parseVoiceCommand,
+  type SaveVoiceCommand,
+  type VoiceCommandParseResult,
+  type VoiceWakePhase,
+  type WakeVoiceCommand,
+} from '../services/voice-command';
 
 type Props = {
   onCaptureSaved: (capture: TimestampCapture) => void;
   onNoteReady: (note: NoteRecord) => void;
+  onShortcutActionHandled?: () => void;
+  shortcutAction?: CaptureNowShortcutAction | null;
   source: SourceSummary | null;
 };
 
 type VoiceStatus = 'permission_needed' | 'listening' | 'awake' | 'heard' | 'ignored' | 'saving' | 'saved' | 'error' | 'off';
 type AgentLoopPhase = 'waiting_for_wake' | 'awaiting_command' | 'processing' | 'saved' | 'error';
-type VoiceInteractionPhase = 'waiting_for_wake' | 'awaiting_command';
+type VoiceInteractionPhase = VoiceWakePhase;
+const MAX_SPEECH_RESTART_ATTEMPTS = 8;
 
 const initialPlayerState: YouTubePlayerState = {
   currentTimeSec: 0,
@@ -30,7 +43,7 @@ const initialPlayerState: YouTubePlayerState = {
   ready: false,
 };
 
-export function PlayerScreen({ onCaptureSaved, onNoteReady, source }: Props) {
+export function PlayerScreen({ onCaptureSaved, onNoteReady, onShortcutActionHandled, shortcutAction, source }: Props) {
   const [playerState, setPlayerState] = useState<YouTubePlayerState>(initialPlayerState);
   const [captures, setCaptures] = useState<TimestampCapture[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +52,7 @@ export function PlayerScreen({ onCaptureSaved, onNoteReady, source }: Props) {
   const [voiceRecognizing, setVoiceRecognizing] = useState(false);
   const [voiceStatus, setVoiceStatus] = useState<VoiceStatus>('permission_needed');
   const [voiceTranscript, setVoiceTranscript] = useState('');
-  const [voiceMessage, setVoiceMessage] = useState('영상이 준비되면 말로 저장을 시작합니다.');
+  const [voiceMessage, setVoiceMessage] = useState('Siri로 “Note AI에 방금 저장”이라고 말하면 앱이 멈추고 듣습니다.');
   const [voiceDebug, setVoiceDebug] = useState('진단 대기 중');
   const [speechLocale, setSpeechLocale] = useState('ko-KR');
   const [agentLoopPhase, setAgentLoopPhase] = useState<AgentLoopPhase>('waiting_for_wake');
@@ -48,11 +61,16 @@ export function PlayerScreen({ onCaptureSaved, onNoteReady, source }: Props) {
   const lastCommandKeyRef = useRef<string | null>(null);
   const playerRef = useRef<YouTubePlayerHandle>(null);
   const lastPlayerStateCodeRef = useRef<number | null>(null);
+  const voiceModeEnabledRef = useRef(true);
+  const voiceRecognizingRef = useRef(false);
   const voicePhaseRef = useRef<VoiceInteractionPhase>('waiting_for_wake');
   const activeWakeRef = useRef<WakeVoiceCommand | null>(null);
+  const shortcutCapturedAtSecRef = useRef<number | null>(null);
   const speechLocaleCandidatesRef = useRef<string[]>(['ko-KR', 'en-US']);
   const speechLocaleAttemptRef = useRef(0);
   const speechLocaleRetryingRef = useRef(false);
+  const speechRestartAttemptRef = useRef(0);
+  const speechRestartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const updateVoiceDebug = useCallback((message: string) => {
     setVoiceDebug(message);
@@ -68,7 +86,8 @@ export function PlayerScreen({ onCaptureSaved, onNoteReady, source }: Props) {
         return;
       }
 
-      const capturedAtSec = roundTimestamp(playerState.currentTimeSec);
+      const shortcutCapturedAtSec = shortcutCapturedAtSecRef.current;
+      const capturedAtSec = shortcutCapturedAtSec ?? roundTimestamp(playerState.currentTimeSec);
       const commandKey = `${command.normalizedTranscript}:${capturedAtSec}`;
       if (lastCommandKeyRef.current === commandKey) return;
       lastCommandKeyRef.current = commandKey;
@@ -90,8 +109,8 @@ export function PlayerScreen({ onCaptureSaved, onNoteReady, source }: Props) {
         const capture = await createExactCapture({
           sourceId: source.id,
           capturedAtSec,
-          trigger: 'voice_trigger',
-          triggerTranscript: command.triggerTranscript,
+          trigger: shortcutCapturedAtSec === null ? 'voice_trigger' : 'siri_shortcut',
+          triggerTranscript: shortcutCapturedAtSec === null ? command.triggerTranscript : `Siri/App Shortcut: ${command.triggerTranscript}`,
         });
         updateVoiceDebug(`capture created: ${capture.id} @ ${capturedAtSec}`);
         setCaptures((current) => [capture, ...current]);
@@ -136,6 +155,7 @@ export function PlayerScreen({ onCaptureSaved, onNoteReady, source }: Props) {
         activeWakeRef.current = null;
         if (voiceModeEnabled) updateVoiceDebug('returned to waiting_for_wake');
         commandInFlightRef.current = false;
+        shortcutCapturedAtSecRef.current = null;
         setSaving(false);
       }
     },
@@ -153,6 +173,7 @@ export function PlayerScreen({ onCaptureSaved, onNoteReady, source }: Props) {
     updateVoiceDebug('command completed; play requested');
     voicePhaseRef.current = 'waiting_for_wake';
     activeWakeRef.current = null;
+    shortcutCapturedAtSecRef.current = null;
     updateVoiceDebug('returned to waiting_for_wake');
   }, [updateVoiceDebug]);
 
@@ -183,6 +204,12 @@ export function PlayerScreen({ onCaptureSaved, onNoteReady, source }: Props) {
     [updateVoiceDebug],
   );
 
+  const clearScheduledVoiceRestart = useCallback(() => {
+    if (speechRestartTimerRef.current === null) return;
+    clearTimeout(speechRestartTimerRef.current);
+    speechRestartTimerRef.current = null;
+  }, []);
+
   const startVoiceRecognition = useCallback(async () => {
     if (!source) {
       updateVoiceDebug('start skipped: no source');
@@ -204,7 +231,7 @@ export function PlayerScreen({ onCaptureSaved, onNoteReady, source }: Props) {
       updateVoiceDebug('start skipped: recognition already starting');
       return;
     }
-    if (voiceRecognizing) {
+    if (voiceRecognizingRef.current) {
       updateVoiceDebug('start skipped: already recognizing');
       return;
     }
@@ -246,9 +273,117 @@ export function PlayerScreen({ onCaptureSaved, onNoteReady, source }: Props) {
     } finally {
       recognitionStartingRef.current = false;
     }
-  }, [playerState.ready, source, updateVoiceDebug, voiceModeEnabled, voiceRecognizing]);
+  }, [playerState.ready, source, updateVoiceDebug, voiceModeEnabled]);
+
+  const scheduleVoiceRecognitionRestart = useCallback(
+    (reason: string, userMessage = '음성 연결이 끊겨 다시 듣는 중입니다.') => {
+      if (!source || !voiceModeEnabledRef.current || commandInFlightRef.current) return;
+      const nextAttempt = speechRestartAttemptRef.current + 1;
+      if (nextAttempt > MAX_SPEECH_RESTART_ATTEMPTS) {
+        clearScheduledVoiceRestart();
+        setAgentLoopPhase('error');
+        setVoiceStatus('error');
+        setVoiceMessage('음성 연결이 반복해서 끊겼습니다. 말로 저장을 껐다 켠 뒤 다시 시도해주세요.');
+        updateVoiceDebug(`restart stopped after ${MAX_SPEECH_RESTART_ATTEMPTS} attempts: ${reason}`);
+        return;
+      }
+
+      speechRestartAttemptRef.current = nextAttempt;
+      clearScheduledVoiceRestart();
+      setVoiceStatus('permission_needed');
+      setVoiceMessage(userMessage);
+      updateVoiceDebug(`recognizer restart scheduled (${reason}) attempt ${nextAttempt}`);
+      speechRestartTimerRef.current = setTimeout(() => {
+        speechRestartTimerRef.current = null;
+        void startVoiceRecognition();
+      }, 650);
+    },
+    [clearScheduledVoiceRestart, source, startVoiceRecognition, updateVoiceDebug, voiceModeEnabled],
+  );
+
+  useEffect(() => {
+    if (!shortcutAction) return;
+
+    if (!source) {
+      setAgentLoopPhase('error');
+      setVoiceStatus('error');
+      setVoiceMessage('Siri 요청을 받았지만 등록된 영상이 없습니다. 먼저 YouTube 링크를 등록하세요.');
+      updateVoiceDebug(`shortcut ignored: no source (${shortcutAction.source})`);
+      onShortcutActionHandled?.();
+      return;
+    }
+
+    if (!playerState.ready) {
+      setVoiceStatus('permission_needed');
+      setVoiceMessage('Siri 요청을 받았습니다. 플레이어가 준비되면 바로 멈추고 듣습니다.');
+      updateVoiceDebug(`shortcut waiting for player: ${shortcutAction.source}`);
+      return;
+    }
+
+    if (commandInFlightRef.current || saving) return;
+
+    const capturedAtSec = roundTimestamp(playerState.currentTimeSec);
+    shortcutCapturedAtSecRef.current = capturedAtSec;
+    voiceModeEnabledRef.current = true;
+    voicePhaseRef.current = 'awaiting_command';
+    const triggerTranscript = shortcutAction.source === 'siri_app_intent'
+      ? 'Siri/App Intent: 방금 저장'
+      : 'Siri/App Shortcut: 방금 저장';
+    activeWakeRef.current = {
+      action: 'wake_word',
+      matchedTrigger: 'Siri/App Shortcut',
+      normalizedTranscript: 'siri app shortcut',
+      originalTranscript: 'Siri/App Shortcut',
+      triggerTranscript,
+    };
+
+    clearScheduledVoiceRestart();
+    try {
+      ExpoSpeechRecognitionModule.stop();
+    } catch (caught) {
+      const message = caught instanceof Error ? caught.message : 'unknown stop error';
+      updateVoiceDebug(`shortcut recognizer stop skipped: ${message}`);
+    }
+
+    playerRef.current?.pause();
+    setVoiceModeEnabled(true);
+    voiceRecognizingRef.current = false;
+    setVoiceRecognizing(false);
+    setAgentLoopPhase('awaiting_command');
+    setVoiceStatus('awake');
+    setVoiceTranscript('');
+    setVoiceMessage(`Siri 요청 수신 · ${formatSeconds(capturedAtSec)}에서 멈췄습니다. 저장할 내용과 내 생각을 말해주세요.`);
+    updateVoiceDebug(`shortcut received; pause requested @ ${capturedAtSec}`);
+    onShortcutActionHandled?.();
+
+    if (shortcutAction.memoTranscript && shortcutAction.memoTranscript.length > 0) {
+      const command = createSaveVoiceCommandFromSiriMemo(shortcutAction.memoTranscript, triggerTranscript);
+      setVoiceTranscript(shortcutAction.memoTranscript);
+      setVoiceMessage('Siri 요청 내용을 받았습니다. 바로 저장하고 정리합니다.');
+      void handleVoiceCommand(command);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      void startVoiceRecognition();
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [
+    clearScheduledVoiceRestart,
+    onShortcutActionHandled,
+    playerState.currentTimeSec,
+    playerState.ready,
+    saving,
+    handleVoiceCommand,
+    shortcutAction,
+    source,
+    startVoiceRecognition,
+    updateVoiceDebug,
+  ]);
 
   useSpeechRecognitionEvent('start', () => {
+    voiceRecognizingRef.current = true;
     setVoiceRecognizing(true);
     updateVoiceDebug(`recognizer started: ${voicePhaseRef.current}`);
     if (voicePhaseRef.current === 'awaiting_command') {
@@ -257,12 +392,14 @@ export function PlayerScreen({ onCaptureSaved, onNoteReady, source }: Props) {
       return;
     }
     setVoiceStatus('listening');
-    setVoiceMessage('“노트AI야”라고 부르면 영상을 멈추고 듣습니다.');
+    setVoiceMessage('Siri 요청 이후 저장할 내용과 내 생각을 듣고 있습니다.');
   });
 
   useSpeechRecognitionEvent('end', () => {
+    voiceRecognizingRef.current = false;
     setVoiceRecognizing(false);
     updateVoiceDebug(`recognizer ended: ${voicePhaseRef.current}`);
+    scheduleVoiceRecognitionRestart('recognizer_end');
   });
 
   useSpeechRecognitionEvent('result', (event) => {
@@ -270,16 +407,19 @@ export function PlayerScreen({ onCaptureSaved, onNoteReady, source }: Props) {
     if (transcript.length === 0) return;
 
     setVoiceTranscript(transcript);
+    speechRestartAttemptRef.current = 0;
     updateVoiceDebug(`result ${event.isFinal ? 'final' : 'interim'}: ${transcript}`);
-    const wakeCommand = parseWakeWord(transcript);
-    if (wakeCommand.action === 'wake_word') {
+    const wakeDecision = decideWakeActivationFromSpeechResult({
+      isFinal: event.isFinal,
+      phase: voicePhaseRef.current,
+      transcript,
+    });
+    if (wakeDecision.action === 'activate_wake') {
+      handleWakeWord(wakeDecision.wakeCommand);
       if (!event.isFinal) {
-        setVoiceStatus('heard');
-        setVoiceMessage('호출어를 들었습니다. 말이 끝나면 재생을 멈춥니다.');
         return;
       }
 
-      handleWakeWord(wakeCommand);
       const commandInWakeUtterance = parseVoiceCommand(transcript);
       if (commandInWakeUtterance.action === 'save_moment') {
         void handleVoiceCommand(commandInWakeUtterance);
@@ -317,10 +457,10 @@ export function PlayerScreen({ onCaptureSaved, onNoteReady, source }: Props) {
       }
       if (event.isFinal) {
         setVoiceStatus('ignored');
-        setVoiceMessage('호출어가 아니어서 지나쳤습니다. “노트AI야”라고 먼저 불러주세요.');
+        setVoiceMessage('Siri 요청 이후의 저장 명령이 아니어서 지나쳤습니다.');
       } else {
         setVoiceStatus('heard');
-        setVoiceMessage('듣고 있습니다. “노트AI야”라고 부르면 멈추고 듣습니다.');
+        setVoiceMessage('듣고 있습니다. 저장할 내용과 내 생각을 말해주세요.');
       }
       return;
     }
@@ -335,9 +475,14 @@ export function PlayerScreen({ onCaptureSaved, onNoteReady, source }: Props) {
   });
 
   useSpeechRecognitionEvent('error', (event) => {
+    voiceRecognizingRef.current = false;
     setVoiceRecognizing(false);
     updateVoiceDebug(`recognizer error: ${event.error} ${event.message ?? ''}`.trim());
-    if (event.error === 'aborted') return;
+    const recovery = decideSpeechRecognitionRecovery({
+      error: event.error,
+      message: event.message,
+    });
+    if (recovery.action === 'ignore') return;
 
     const nextLocale = getNextSpeechLocale(
       speechLocaleCandidatesRef.current,
@@ -367,8 +512,13 @@ export function PlayerScreen({ onCaptureSaved, onNoteReady, source }: Props) {
       return;
     }
 
+    if (recovery.action === 'restart') {
+      scheduleVoiceRecognitionRestart(recovery.reason, recovery.userMessage);
+      return;
+    }
+
     setVoiceStatus('error');
-    setVoiceMessage(formatSpeechRecognitionError(event.error, event.message));
+    setVoiceMessage(recovery.userMessage);
   });
 
   useEffect(() => {
@@ -376,16 +526,29 @@ export function PlayerScreen({ onCaptureSaved, onNoteReady, source }: Props) {
     setVoiceModeEnabled(true);
     setVoiceStatus('permission_needed');
     setVoiceTranscript('');
-    setVoiceMessage('영상이 준비되면 말로 저장을 시작합니다.');
+    setVoiceMessage('Siri로 “Note AI에 방금 저장”이라고 말하면 영상을 멈추고 메모를 듣습니다.');
     setAgentLoopPhase('waiting_for_wake');
     setVoiceDebug('새 영상 진단 대기 중');
     lastCommandKeyRef.current = null;
+    speechRestartAttemptRef.current = 0;
+    clearScheduledVoiceRestart();
     voicePhaseRef.current = 'waiting_for_wake';
     activeWakeRef.current = null;
-  }, [source?.id, source]);
+  }, [clearScheduledVoiceRestart, source?.id, source]);
 
   useEffect(() => {
-    if (!source || !playerState.ready || !voiceModeEnabled || voiceRecognizing || saving || voiceStatus === 'error' || commandInFlightRef.current) return;
+    if (
+      !source ||
+      !playerState.ready ||
+      !voiceModeEnabled ||
+      voicePhaseRef.current !== 'awaiting_command' ||
+      voiceRecognizing ||
+      saving ||
+      voiceStatus === 'error' ||
+      commandInFlightRef.current
+    ) {
+      return;
+    }
     const timer = setTimeout(() => {
       void startVoiceRecognition();
     }, 500);
@@ -394,6 +557,7 @@ export function PlayerScreen({ onCaptureSaved, onNoteReady, source }: Props) {
 
   function toggleVoiceMode() {
     if (voiceModeEnabled) {
+      voiceModeEnabledRef.current = false;
       setVoiceModeEnabled(false);
       setAgentLoopPhase('waiting_for_wake');
       setVoiceStatus('off');
@@ -406,6 +570,7 @@ export function PlayerScreen({ onCaptureSaved, onNoteReady, source }: Props) {
       return;
     }
 
+    voiceModeEnabledRef.current = true;
     setVoiceModeEnabled(true);
     setAgentLoopPhase('waiting_for_wake');
     setVoiceStatus('permission_needed');
@@ -450,9 +615,9 @@ export function PlayerScreen({ onCaptureSaved, onNoteReady, source }: Props) {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.headerCard}>
-          <Text style={styles.kicker}>MVP1 · 말로 정확 저장</Text>
-          <Text style={styles.title}>듣다가 말하면 바로 노트로</Text>
-          <Text style={styles.body}>앱이 열린 동안 “노트AI야”라고 부르면 재생을 멈추고, 이어서 말한 저장 명령과 내 생각을 현재 timestamp에 붙입니다. 숨김/백그라운드 재생 없이 보이는 플레이어에서만 동작합니다.</Text>
+          <Text style={styles.kicker}>MVP1 · Siri 정확 저장</Text>
+          <Text style={styles.title}>Siri로 부르면 앱이 멈추고 듣습니다</Text>
+          <Text style={styles.body}>YouTube를 앱 안의 보이는 플레이어로 듣다가 “Siri야, Note AI에 방금 저장”이라고 말하면 현재 timestamp를 고정하고, 이어서 말한 내 생각을 노트로 정리합니다. 숨김/백그라운드 재생 없이 동작합니다.</Text>
         </View>
 
         <View style={styles.playerCard}>
@@ -471,7 +636,7 @@ export function PlayerScreen({ onCaptureSaved, onNoteReady, source }: Props) {
         <View style={[styles.voiceCard, voiceStatus === 'listening' && styles.voiceCardActive, voiceStatus === 'error' && styles.voiceCardError]}>
           <View style={styles.voiceHeader}>
             <View>
-              <Text style={styles.voiceKicker}>말로 저장</Text>
+              <Text style={styles.voiceKicker}>Siri로 저장</Text>
               <Text style={styles.sectionTitle}>{voiceStatusLabel(voiceStatus)}</Text>
             </View>
             <Pressable accessibilityRole="switch" accessibilityState={{ checked: voiceModeEnabled }} onPress={toggleVoiceMode} style={({ pressed }) => [styles.voiceToggle, !voiceModeEnabled && styles.voiceToggleOff, pressed && styles.buttonPressed]}>
@@ -483,7 +648,7 @@ export function PlayerScreen({ onCaptureSaved, onNoteReady, source }: Props) {
           <Text style={styles.voiceLocale}>인식 언어 · {speechLocale}</Text>
           <Text style={styles.voiceDebug}>진단 · {voiceDebug}</Text>
           <View style={styles.commandExampleBox}>
-            <Text style={styles.commandExample}>“노트AI야” → “방금 저장해줘. 이건 온보딩 아이디어로 정리해줘.”</Text>
+            <Text style={styles.commandExample}>“Siri야, Note AI에 방금 저장” → “방금 내용 요약하고 내 아이디어도 붙여줘.”</Text>
           </View>
           {voiceTranscript.length > 0 ? (
             <View style={styles.transcriptBox}>
@@ -506,7 +671,7 @@ export function PlayerScreen({ onCaptureSaved, onNoteReady, source }: Props) {
         <View style={styles.captureCard}>
           <Text style={styles.sectionTitle}>저장한 timestamp</Text>
           {captures.length === 0 ? (
-            <Text style={styles.emptyText}>아직 저장한 구간이 없습니다. 재생 중 “노트AI야”라고 부른 뒤 저장할 내용을 말하거나 수동 버튼을 누르세요.</Text>
+            <Text style={styles.emptyText}>아직 저장한 구간이 없습니다. 재생 중 Siri로 Note AI를 호출한 뒤 저장할 내용을 말하거나 수동 버튼을 누르세요.</Text>
           ) : (
             captures.map((capture) => (
               <View key={capture.id} style={styles.captureRow}>
@@ -571,11 +736,10 @@ function startNativeSpeechRecognition(locale: string) {
       categoryOptions: [
         AVAudioSessionCategoryOptions.defaultToSpeaker,
         AVAudioSessionCategoryOptions.allowBluetooth,
-        AVAudioSessionCategoryOptions.mixWithOthers,
       ],
-      mode: AVAudioSessionMode.default,
+      mode: AVAudioSessionMode.measurement,
     },
-    iosVoiceProcessingEnabled: true,
+    iosVoiceProcessingEnabled: false,
     contextualStrings: ['Note AI', '노트 AI', '노트 에이', '방금 저장', '이 부분 저장', '듣던 부분 저장', '온보딩', '아이디어'],
   });
 }
@@ -644,7 +808,7 @@ function agentLoopPhaseLabel(value: AgentLoopPhase): string {
     case 'saved':
       return '노트 저장 완료';
     case 'error':
-      return '확인 필요';
+      return '음성 연결 대기';
   }
 }
 

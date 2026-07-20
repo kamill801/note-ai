@@ -1,6 +1,6 @@
 # Docs Index
 
-Last updated: 2026-06-14
+Last updated: 2026-07-04
 
 This is the source-of-truth map for the MVP1 workflow.
 

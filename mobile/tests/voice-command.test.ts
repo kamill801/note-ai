@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { parseVoiceCommand, parseWakeWord } from '../src/services/voice-command.ts';
+import {
+  decideSpeechRecognitionRecovery,
+  decideWakeActivationFromSpeechResult,
+  parseVoiceCommand,
+  parseWakeWord,
+} from '../src/services/voice-command.ts';
 
 test('Given a wake phrase only When parsing wake word Then it activates without requiring a save phrase', () => {
   const result = parseWakeWord('노트AI야');
@@ -9,6 +14,38 @@ test('Given a wake phrase only When parsing wake word Then it activates without 
   if (result.action !== 'wake_word') return;
   assert.equal(result.matchedTrigger, '노트AI야');
   assert.equal(result.triggerTranscript, '노트AI야');
+});
+
+test('Given an interim wake phrase When deciding wake activation Then it activates immediately', () => {
+  const result = decideWakeActivationFromSpeechResult({
+    isFinal: false,
+    phase: 'waiting_for_wake',
+    transcript: '노트AI야',
+  });
+
+  assert.equal(result.action, 'activate_wake');
+  if (result.action !== 'activate_wake') return;
+  assert.equal(result.wakeCommand.matchedTrigger, '노트AI야');
+});
+
+test('Given an interrupted audio session When deciding speech recovery Then it restarts listening', () => {
+  const result = decideSpeechRecognitionRecovery({
+    error: 'interrupted',
+    message: 'Audio session was interrupted',
+  });
+
+  assert.equal(result.action, 'restart');
+  if (result.action !== 'restart') return;
+  assert.equal(result.reason, 'interrupted');
+});
+
+test('Given a denied permission error When deciding speech recovery Then it stops for user action', () => {
+  const result = decideSpeechRecognitionRecovery({
+    error: 'not-allowed',
+    message: 'Not permitted to record audio',
+  });
+
+  assert.equal(result.action, 'stop');
 });
 
 test('Given iOS transcribes AI as Korean words When parsing wake word Then it still activates', () => {

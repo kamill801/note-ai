@@ -11,6 +11,10 @@
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		34F053242F32A595D400C9E1 /* libPods-NoteAI.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FD65C785E4CA99699772178F /* libPods-NoteAI.a */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
+		4A2310012F00000100000001 /* NoteAIPendingCaptureStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A2310112F00000100000001 /* NoteAIPendingCaptureStore.swift */; };
+		4A2310022F00000100000002 /* NoteAIAppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A2310122F00000100000002 /* NoteAIAppIntents.swift */; };
+		4A2310032F00000100000003 /* NoteAIPendingCaptureModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A2310132F00000100000003 /* NoteAIPendingCaptureModule.swift */; };
+		4A2310042F00000100000004 /* NoteAIPendingCaptureModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 4A2310142F00000100000004 /* NoteAIPendingCaptureModule.m */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		BF0416E4FD3911B73FFC7AF0 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = F55B2BF802D2F1064031C8B8 /* PrivacyInfo.xcprivacy */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
@@ -22,6 +26,10 @@
 		13B07F961A680F5B00A75B9A /* NoteAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NoteAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = NoteAI/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = NoteAI/Info.plist; sourceTree = "<group>"; };
+		4A2310112F00000100000001 /* NoteAIPendingCaptureStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NoteAIPendingCaptureStore.swift; path = NoteAI/NoteAIPendingCaptureStore.swift; sourceTree = "<group>"; };
+		4A2310122F00000100000002 /* NoteAIAppIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NoteAIAppIntents.swift; path = NoteAI/NoteAIAppIntents.swift; sourceTree = "<group>"; };
+		4A2310132F00000100000003 /* NoteAIPendingCaptureModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NoteAIPendingCaptureModule.swift; path = NoteAI/NoteAIPendingCaptureModule.swift; sourceTree = "<group>"; };
+		4A2310142F00000100000004 /* NoteAIPendingCaptureModule.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = NoteAIPendingCaptureModule.m; path = NoteAI/NoteAIPendingCaptureModule.m; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = NoteAI/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
 		DC70939D46FB4F1C62EE8591 /* Pods-NoteAI.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-NoteAI.debug.xcconfig"; path = "Target Support Files/Pods-NoteAI/Pods-NoteAI.debug.xcconfig"; sourceTree = "<group>"; };
@@ -56,6 +64,10 @@
 			isa = PBXGroup;
 			children = (
 				F11748412D0307B40044C1D9 /* AppDelegate.swift */,
+				4A2310122F00000100000002 /* NoteAIAppIntents.swift */,
+				4A2310112F00000100000001 /* NoteAIPendingCaptureStore.swift */,
+				4A2310132F00000100000003 /* NoteAIPendingCaptureModule.swift */,
+				4A2310142F00000100000004 /* NoteAIPendingCaptureModule.m */,
 				F11748442D0722820044C1D9 /* NoteAI-Bridging-Header.h */,
 				BB2F792B24A3F905000567C9 /* Supporting */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
@@ -349,7 +361,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4A2310022F00000100000002 /* NoteAIAppIntents.swift in Sources */,
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
+				4A2310032F00000100000003 /* NoteAIPendingCaptureModule.swift in Sources */,
+				4A2310042F00000100000004 /* NoteAIPendingCaptureModule.m in Sources */,
+				4A2310012F00000100000001 /* NoteAIPendingCaptureStore.swift in Sources */,
 				139E862AB7ACDCB1D7570184 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -3,7 +3,7 @@
 ## Source of truth
 
 - Status: Active for MVP1 implementation
-- Last refreshed: 2026-06-19
+- Last refreshed: 2026-07-04
 - Design workflow used:
   - `$design` repo-local design contract workflow.
   - Product ideation workflow Stage 7: design decision lock before implementation.
@@ -124,7 +124,8 @@
   - `영상 가져오기` -> `Import Video`.
   - `가져오기` -> `Source Processing`.
   - `지금 듣기` -> `Listen / Save`.
-  - `Note AI야 방금 저장...` spoken on `Listen / Save` -> create exact timestamp save -> preserve spoken memo -> `Note Processing`.
+  - `Siri야, Note AI에 방금 저장` spoken while `Listen / Save` has an active source -> open/foreground app -> pause player -> create exact timestamp save -> `Voice Memo` or `Note Processing`.
+  - Experimental `Note AI야 방금 저장...` spoken on `Listen / Save` -> create exact timestamp save when the foreground recognizer is enabled.
   - `지금 저장` / `이 부분 저장` -> fallback exact timestamp save -> `Voice Memo`.
   - `말 끝났어요` -> `Note Processing`.
   - `메모 없이 저장` -> `Note Processing` with memo-empty state.
@@ -220,26 +221,32 @@
   - Source title.
   - Current playback time.
   - Exact save state: `정확 저장`.
-  - Primary state panel: `말로 저장 대기 중`.
-  - Recognized command preview.
+  - Primary state panel: `Siri로 방금 저장 대기 중`.
+  - Shortcut/action diagnostic preview.
   - Supported examples:
-    - `Note AI야 방금 저장해줘. 이건 온보딩 아이디어로 정리해줘.`
-    - `노트 에이야 이 부분 저장. 나중에 관련 자료도 찾아줘.`
+    - `Siri야, Note AI에 방금 저장.`
+    - `Siri야, Note AI로 이 부분 저장.`
+    - Experimental: `Note AI야 방금 저장해줘. 이건 온보딩 아이디어로 정리해줘.`
   - Fallback CTA: `이 부분 저장`.
   - Optional preview of latest memo/thought.
 - Rules:
   - Player must remain visible.
   - Do not hide player.
   - Do not imply background playback.
-  - Voice state must be visually dominant.
+  - Hands-free save state must be visually dominant.
   - Save fallback button must be thumb-friendly and visually available.
-  - Avoid implying that the app listens outside this screen.
+  - Avoid implying that the app listens outside this screen unless the action is explicitly Siri/App Shortcut.
+  - Custom wake word must be labeled experimental if shown.
 - States:
   - Player loading.
   - Player ready.
   - Voice mode off.
   - Permission needed.
-  - Listening for command.
+  - Waiting for Siri/App Shortcut.
+  - Shortcut received.
+  - Player pause requested.
+  - Timestamp saved.
+  - Listening for memo.
   - Recognized but ignored.
   - Saving from voice command.
   - Voice save success.

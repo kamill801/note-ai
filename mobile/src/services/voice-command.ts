@@ -40,6 +40,45 @@ export type WakeVoiceCommand = {
   triggerTranscript: string;
 };
 
+export type VoiceWakePhase = 'waiting_for_wake' | 'awaiting_command';
+
+export type SpeechResultWakeDecision =
+  | {
+      action: 'activate_wake';
+      wakeCommand: WakeVoiceCommand;
+    }
+  | {
+      action: 'already_awake';
+    }
+  | {
+      action: 'wait_for_wake';
+      ignored: IgnoredVoiceCommand;
+    };
+
+export type SpeechRecognitionRecoveryDecision =
+  | {
+      action: 'restart';
+      reason: string;
+      userMessage: string;
+    }
+  | {
+      action: 'ignore';
+    }
+  | {
+      action: 'stop';
+      userMessage: string;
+    };
+
+const RECOVERABLE_SPEECH_ERRORS = new Set([
+  'audio-capture',
+  'busy',
+  'client',
+  'interrupted',
+  'network',
+  'no-speech',
+  'speech-timeout',
+]);
+
 export const DEFAULT_APP_TRIGGER_PHRASES = [
   '노트AI야',
   '노트 AI야',
@@ -209,6 +248,39 @@ export function parseVoiceCommand(
   };
 }
 
+export function createSaveVoiceCommandFromSiriMemo(
+  memoTranscript: string,
+  triggerTranscript = 'Siri/App Shortcut: 방금 저장',
+): SaveVoiceCommand {
+  const originalTranscript = memoTranscript.trim();
+  const parsed = parseVoiceCommand(originalTranscript, {
+    fallbackMatchedTrigger: 'Siri/App Shortcut',
+    fallbackTriggerTranscript: triggerTranscript,
+    requireTrigger: false,
+  });
+
+  if (parsed.action === 'save_moment') {
+    return {
+      ...parsed,
+      memoTranscript: parsed.memoTranscript.length > 0 ? parsed.memoTranscript : originalTranscript,
+      triggerTranscript,
+    };
+  }
+
+  const normalized = normalizeWithIndexMap(originalTranscript).value;
+  return {
+    action: 'save_moment',
+    intent: detectIntent(originalTranscript),
+    matchedSavePhrase: 'Siri/App Shortcut',
+    matchedTrigger: 'Siri/App Shortcut',
+    memoTranscript: originalTranscript,
+    normalizedTranscript: normalized,
+    originalTranscript,
+    shouldResumePlayback: parsed.action === 'resume_playback',
+    triggerTranscript,
+  };
+}
+
 export function parseWakeWord(
   transcript: string,
   options: {
@@ -236,6 +308,51 @@ export function parseWakeWord(
   };
 }
 
+export function decideWakeActivationFromSpeechResult(input: {
+  readonly isFinal: boolean;
+  readonly phase: VoiceWakePhase;
+  readonly transcript: string;
+}): SpeechResultWakeDecision {
+  if (input.phase === 'awaiting_command') {
+    return { action: 'already_awake' };
+  }
+
+  const wakeCommand = parseWakeWord(input.transcript);
+  if (wakeCommand.action === 'wake_word') {
+    return {
+      action: 'activate_wake',
+      wakeCommand,
+    };
+  }
+
+  return {
+    action: 'wait_for_wake',
+    ignored: wakeCommand,
+  };
+}
+
+export function decideSpeechRecognitionRecovery(input: {
+  readonly error: string;
+  readonly message?: string;
+}): SpeechRecognitionRecoveryDecision {
+  if (input.error === 'aborted') {
+    return { action: 'ignore' };
+  }
+
+  if (RECOVERABLE_SPEECH_ERRORS.has(input.error)) {
+    return {
+      action: 'restart',
+      reason: input.error,
+      userMessage: '음성 연결이 끊겨 다시 듣는 중입니다.',
+    };
+  }
+
+  return {
+    action: 'stop',
+    userMessage: formatSpeechRecoveryStopMessage(input.error, input.message),
+  };
+}
+
 function ignored(originalTranscript: string, normalizedTranscript: string, reason: IgnoredVoiceCommand['reason']): IgnoredVoiceCommand {
   return {
     action: 'ignore',
@@ -243,6 +360,12 @@ function ignored(originalTranscript: string, normalizedTranscript: string, reaso
     originalTranscript,
     reason,
   };
+}
+
+function formatSpeechRecoveryStopMessage(error: string, message?: string): string {
+  const normalized = message?.trim();
+  if (normalized) return normalized;
+  return `음성 인식 오류: ${error}`;
 }
 
 function findFirstPhrase(text: string, phrases: string[]): PhraseMatch | undefined {

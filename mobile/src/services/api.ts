@@ -45,7 +45,7 @@ export async function importDemoTranscript(sourceId: string): Promise<void> {
 export async function createExactCapture(input: {
   sourceId: string;
   capturedAtSec: number;
-  trigger?: 'manual_button' | 'voice_trigger';
+  trigger?: 'manual_button' | 'voice_trigger' | 'siri_shortcut';
   triggerTranscript?: string;
 }): Promise<TimestampCapture> {
   const payload = await request<{ capture: TimestampCapture }>('/captures', {

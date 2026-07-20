@@ -1,11 +1,11 @@
 # PLAN: 이동 중 YouTube 지식 캡처 앱
 
 Status: Draft
-Last updated: 2026-06-19
+Last updated: 2026-07-04
 
 ## Current Goal
 
-1차 MVP는 앱 내 YouTube 재생 기반 정확 저장 모드를 구현해 전체 기능 파이프라인을 검증한다. 목표는 "그럴듯한 데모"가 아니라 링크 등록, 재생, 음성 트리거, timestamp 저장, 음성 메모, 노트 생성, 추가 리서치가 기능적으로 정상작동하는 것이다.
+1차 MVP는 앱 내 YouTube 재생 기반 정확 저장 모드에 Siri/App Shortcut 핸즈프리 트리거를 붙여 전체 기능 파이프라인을 검증한다. 목표는 "그럴듯한 데모"가 아니라 링크 등록, 재생, Siri 기반 저장 호출, timestamp 저장, 음성 메모, 노트 생성, 추가 리서치가 기능적으로 정상작동하는 것이다.
 
 ## Development Principles
 
@@ -14,9 +14,9 @@ Last updated: 2026-06-19
 - YouTube 앱 연동형 추정 저장은 2차 MVP로 둔다.
 - YouTube를 대체하지 않는다.
 - 시스템 전체 always-listening은 하지 않는다.
-- 음성 트리거는 앱 foreground/capture mode 안에서만 동작한다.
-- MVP1 primary interaction은 버튼이 아니라 `듣기` 화면의 foreground voice command이다.
-- 수동 버튼과 텍스트 입력은 음성 인식 실패/권한 거부/소음 환경을 위한 fallback이다.
+- MVP1 primary hands-free interaction은 `Siri/App Shortcut -> 방금 저장`이다.
+- 앱 내부 custom wake word는 experimental로 유지하며 MVP 성공 기준에 묶지 않는다.
+- 수동 버튼과 텍스트 입력은 Siri 실패/권한 거부/소음 환경을 위한 fallback이다.
 - TECHSPEC에는 구현 순서를 넣지 않고, 이 파일에서만 관리한다.
 
 ## Pre-Implementation Gate: Design Decision Lock
@@ -91,20 +91,30 @@ Acceptance:
 - 추가 음성 메모가 녹음/전사된다.
 - 사용자의 메모 텍스트가 누락 없이 저장된다.
 
-### Milestone 3A: Voice-First Save Command
+### Milestone 3A: Siri/App Shortcut Save Command
 
-목표: 사용자가 `듣기` 화면에서 영상 재생 중 앱 이름과 저장 명령을 말하면 버튼 없이 timestamp 저장, 메모 저장, 노트 생성을 수행한다.
+목표: 사용자가 `듣기` 화면에서 영상 재생 중 "Siri야, Note AI에 방금 저장"을 말하면 버튼 없이 앱이 foreground되고, 플레이어를 멈춘 뒤 timestamp 저장, 메모 저장, 노트 생성을 수행한다.
 
 Acceptance:
 
-- `expo-speech-recognition` 기반 foreground speech recognition이 Dev Client에서 동작한다.
-- 앱이 열린 상태의 `듣기` 화면에서만 음성 명령을 듣는다.
-- 마이크/음성 인식 권한 요청 문구가 명확하다.
-- `Note AI야`, `노트 AI야`, `노트 에이야`, `에이야` 중 하나와 `방금 저장`, `방금 부분 저장`, `이 부분 저장`, `듣던 부분 저장` 중 하나가 같은 발화에 있을 때만 저장한다.
-- 인식 문장의 저장 명령 뒤쪽 텍스트를 사용자 메모로 보존한다.
+- iOS App Intent/App Shortcut이 `방금 저장` 액션을 노출한다.
+- Shortcut 실행 시 앱이 열리거나 foreground된다.
+- 앱은 shortcut/deep-link/native event를 `capture_now` action으로 파싱한다.
+- action 수신 시 YouTube player에 pause를 요청하고 현재 timestamp를 고정한다.
+- timestamp 저장 후 사용자 음성 메모/의도 입력 상태로 전환한다.
 - 명령 성공 시 현재 player timestamp로 `POST /captures`, memo가 있으면 `POST /voice-memos`, 이후 `POST /notes`까지 자동 실행한다.
-- 음성 인식 실패, 권한 거부, 플레이어 준비 전 상태에서는 기존 수동 버튼/텍스트 입력 fallback을 제공한다.
+- Siri 실행 실패, 권한 거부, 플레이어 준비 전 상태에서는 기존 수동 버튼/텍스트 입력 fallback을 제공한다.
 - YouTube 플레이어는 계속 화면에 보이고, 백그라운드/숨김 재생을 제공하지 않는다.
+
+### Milestone 3B: Experimental Foreground Wake Word
+
+목표: 기존 `노트AI야` foreground wake word 실험은 유지하되 MVP 성공 기준에서 분리한다.
+
+Acceptance:
+
+- 설정 또는 내부 flag 뒤에서만 사용한다.
+- 실패해도 Siri/App Shortcut save path를 막지 않는다.
+- UI는 custom wake word를 시스템 전체 wake word처럼 약속하지 않는다.
 
 ### Milestone 4: Transcript and Segment Selection
 
@@ -217,17 +227,37 @@ Acceptance:
   - Acceptance: memo transcript saved.
   - Test: fixture audio.
 
-- TODO: foreground voice command dependency and permissions.
+- DONE: Siri/App Shortcut action bridge.
+  - Files likely affected: `mobile/App.tsx`, `mobile/src/services/shortcut-action.ts`, `mobile/src/screens/PlayerScreen.tsx`
+  - Acceptance: `noteai://shortcut/capture-now` or native shortcut event becomes one queued `capture_now` action.
+  - Test: TypeScript unit tests for action parser/deduping and manual URL smoke.
+
+- DONE: iOS App Intent and App Shortcut.
+  - Files likely affected: `mobile/ios/NoteAI/`, `mobile/ios/NoteAI.xcodeproj/project.pbxproj`
+  - Acceptance: iPhone exposes built-in `Note AI에 방금 저장/요약/조사/정리` App Shortcut phrases that open/foreground the app and write a native `PendingCaptureRequest`.
+  - Test: `xcodebuild -workspace mobile/ios/NoteAI.xcworkspace -scheme NoteAI -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' build`; real iPhone Siri/App Shortcut manual QA still required after device reinstall.
+
+- DONE: shortcut-triggered player pause and timestamp freeze.
+  - Files likely affected: `mobile/src/screens/PlayerScreen.tsx`, `mobile/src/components/YouTubePlayerView.tsx`
+  - Acceptance: action receipt pauses the visible player, snapshots `currentTimeSec`, then creates the `siri_shortcut` capture when the follow-up memo/save command is recognized.
+  - Test: mobile unit/typecheck plus real-device manual flow.
+
+- DONE: Siri memo parameter handoff.
+  - Files likely affected: `mobile/src/screens/PlayerScreen.tsx`, `mobile/src/services/pending-capture-request.ts`, `mobile/src/services/pending-capture-native.ts`, `mobile/src/services/voice-command.ts`
+  - Acceptance: if Siri provides the memo parameter, React Native skips post-trigger speech recognition, pauses the player, snapshots timestamp, creates capture/memo/note/research from the Siri memo, and clears the pending request.
+  - Test: `npm --workspace mobile test`, `npm --workspace mobile run typecheck`; real iPhone Siri memo prompt QA still required after device reinstall.
+
+- TODO: experimental foreground voice command dependency and permissions.
   - Files likely affected: `mobile/package.json`, `mobile/app.json`, `mobile/ios/`
   - Acceptance: Dev Client includes speech recognition native module and iOS permission copy.
   - Test: `npm --workspace mobile exec -- expo config --type public`, iOS simulator smoke.
 
-- TODO: voice command parser.
+- TODO: experimental voice command parser.
   - Files likely affected: `mobile/src/services/voice-command.ts`
   - Acceptance: app trigger + save phrase parse to `save_moment`; unrelated speech ignored.
   - Test: unit or focused TypeScript-level parser checks.
 
-- TODO: voice-first listen screen.
+- TODO: experimental voice-first listen screen.
   - Files likely affected: `mobile/src/screens/PlayerScreen.tsx`
   - Acceptance: while voice mode is on, recognized command creates capture, memo, and note without extra taps.
   - Test: simulator/dev-client manual voice command smoke; fallback button still works.
